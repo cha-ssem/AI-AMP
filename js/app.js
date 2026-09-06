@@ -13,6 +13,8 @@ const App = {
   lectures: [],
   events: [],
   ledger: [],
+  initialBalance: 0,
+  initialBalanceUpdatedAt: "",
   currentUserId: "mem-1301",
 
   init() {
@@ -21,6 +23,7 @@ const App = {
     this.events = StorageService.getEvents();
     this.ledger = StorageService.getLedger();
     this.initialBalance = StorageService.getInitialBalance();
+    this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
 
     // 브라우저 새로고침 시에도 사용자의 세션(로그인 또는 로그아웃 상태) 100% 완벽 보존
     const savedUserId = StorageService.getCurrentUserId();
@@ -298,9 +301,26 @@ const App = {
         if (docId === "initial_balance" || data.isConfig === true) {
           if (typeof data.initialBalance === "number") {
             this.initialBalance = data.initialBalance;
-            StorageService.saveInitialBalance(data.initialBalance);
+            const updatedDate = data.updatedAt || "";
+            this.initialBalanceUpdatedAt = updatedDate;
+            StorageService.saveInitialBalance(data.initialBalance, updatedDate);
             const initialEl = document.getElementById("initialBalanceAmount");
             if (initialEl) initialEl.textContent = `${this.initialBalance.toLocaleString()}원`;
+            const initialDateEl = document.getElementById("initialBalanceDate");
+            if (initialDateEl) {
+              if (updatedDate) {
+                let dateDisplay = updatedDate;
+                if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
+                  dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
+                } else if (typeof dateDisplay === "string" && dateDisplay.includes("T")) {
+                  dateDisplay = dateDisplay.split("T")[0];
+                }
+                initialDateEl.textContent = `📅 ${dateDisplay}`;
+                initialDateEl.style.display = "inline-flex";
+              } else {
+                initialDateEl.style.display = "none";
+              }
+            }
           }
           return;
         }
@@ -2731,6 +2751,23 @@ const App = {
     const initialEl = document.getElementById("initialBalanceAmount");
     if (initialEl) initialEl.textContent = `${initBalance.toLocaleString()}원`;
     
+    const initialDateEl = document.getElementById("initialBalanceDate");
+    if (initialDateEl) {
+      const updatedDate = this.initialBalanceUpdatedAt;
+      if (updatedDate) {
+        let dateDisplay = updatedDate;
+        if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
+          dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
+        } else if (typeof dateDisplay === "string" && dateDisplay.includes("T")) {
+          dateDisplay = dateDisplay.split("T")[0];
+        }
+        initialDateEl.textContent = `📅 ${dateDisplay}`;
+        initialDateEl.style.display = "inline-flex";
+      } else {
+        initialDateEl.style.display = "none";
+      }
+    }
+    
     const incomeEl = document.getElementById("totalSponsorshipAmount");
     if (incomeEl) incomeEl.textContent = `${totalIncome.toLocaleString()}원`;
 
@@ -3205,8 +3242,10 @@ const App = {
     if (e) e.preventDefault();
 
     const val = parseInt(document.getElementById("initialBalanceInput").value, 10) || 0;
+    const nowIso = new Date().toISOString();
     this.initialBalance = val;
-    StorageService.saveInitialBalance(val);
+    this.initialBalanceUpdatedAt = nowIso;
+    StorageService.saveInitialBalance(val, nowIso);
 
     // Firestore ledger/initial_balance 문서 저장 (기존 ledger 컬렉션 내부 통합 보관)
     if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
@@ -3214,7 +3253,7 @@ const App = {
         await window.FS.setDoc(window.FS.doc(window.db, "ledger", "initial_balance"), { 
           initialBalance: val, 
           isConfig: true, 
-          updatedAt: new Date().toISOString() 
+          updatedAt: nowIso 
         }, { merge: true });
       } catch (err) {
         console.warn("Firestore 이월 잔고 저장 경고:", err);
@@ -3231,8 +3270,10 @@ const App = {
 
     if (!confirm("초기 이월 잔고를 0원으로 리셋하시겠습니까?")) return;
 
+    const nowIso = new Date().toISOString();
     this.initialBalance = 0;
-    StorageService.saveInitialBalance(0);
+    this.initialBalanceUpdatedAt = nowIso;
+    StorageService.saveInitialBalance(0, nowIso);
 
     const input = document.getElementById("initialBalanceInput");
     if (input) input.value = 0;
@@ -3242,7 +3283,7 @@ const App = {
         await window.FS.setDoc(window.FS.doc(window.db, "ledger", "initial_balance"), { 
           initialBalance: 0, 
           isConfig: true, 
-          updatedAt: new Date().toISOString() 
+          updatedAt: nowIso 
         }, { merge: true });
       } catch (err) {
         console.warn("Firestore 이월 잔고 초기화 경고:", err);

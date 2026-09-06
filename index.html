@@ -584,7 +584,10 @@
       <div class="ledger-summary-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
         <div class="ledger-summary-card">
           <span class="corner-square"></span>
-          <div style="font-size: 13px; color: var(--color-mute);">초기 이월 잔고</div>
+          <div style="font-size: 13px; color: var(--color-mute); display: flex; align-items: center; justify-content: space-between; gap: 6px;">
+            <span>초기 이월 잔고</span>
+            <span id="initialBalanceDate" style="font-size: 11px; color: #2563eb; font-weight: 600; background: #eff6ff; padding: 1px 6px; border-radius: 4px; border: 1px solid #dbeafe; display: none;">📅 -</span>
+          </div>
           <div id="initialBalanceAmount" class="stat-num-nvidia" style="color: #3b82f6;">0원</div>
         </div>
         <div class="ledger-summary-card">

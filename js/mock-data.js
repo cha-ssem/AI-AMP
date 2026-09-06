@@ -346,6 +346,9 @@ class StorageService {
         if (typeof item.initialBalance === "number") {
           localStorage.setItem("enterprise_13th_initial_balance", item.initialBalance.toString());
         }
+        if (item.updatedAt) {
+          localStorage.setItem("enterprise_13th_initial_balance_updated_at", item.updatedAt.toString());
+        }
         return false;
       }
       return item.id !== "led-01" && item.id !== "led-02" && item.id !== "led-03" && item.id !== "led-04";
@@ -365,8 +368,15 @@ class StorageService {
     return val !== null ? parseInt(val, 10) : 0;
   }
 
-  static saveInitialBalance(amount) {
+  static getInitialBalanceUpdatedAt() {
+    return localStorage.getItem("enterprise_13th_initial_balance_updated_at") || "";
+  }
+
+  static saveInitialBalance(amount, updatedAt) {
     localStorage.setItem("enterprise_13th_initial_balance", amount.toString());
+    if (updatedAt) {
+      localStorage.setItem("enterprise_13th_initial_balance_updated_at", updatedAt.toString());
+    }
   }
 
   static getCurrentUserRole() {
