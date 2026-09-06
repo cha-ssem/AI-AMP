@@ -1696,6 +1696,7 @@ const App = {
     const sidebarName = document.getElementById("sidebarMemberName");
     const sidebarRole = document.getElementById("sidebarMemberRole");
     const feeStatusBadge = document.getElementById("feeStatusBadge");
+    const feeDateBadge = document.getElementById("feeDateBadge");
     const unpaidFeeNotice = document.getElementById("unpaidFeeNotice");
 
     if (sidebarName) {
@@ -1715,14 +1716,36 @@ const App = {
 
     if (feeStatusBadge) {
       if (user.feePaid) {
-        feeStatusBadge.textContent = `회비 납부 완료 (${user.feeDate})`;
+        feeStatusBadge.textContent = "🟢 회비 납부 완료";
         feeStatusBadge.style.background = "#dcfce7";
         feeStatusBadge.style.color = "#15803d";
+
+        let displayFeeDate = (user.feeDate && user.feeDate !== "-") ? user.feeDate : "";
+        if (!displayFeeDate && this.ledger) {
+          const ledgerItem = this.ledger.find(l => (l.type === "fee" || l.category === "정회원 회비") && l.name && l.name.trim() === (user.name || "").trim());
+          if (ledgerItem && ledgerItem.date) {
+            displayFeeDate = typeof ledgerItem.date === "object" && ledgerItem.date.seconds 
+              ? new Date(ledgerItem.date.seconds * 1000).toISOString().split("T")[0] 
+              : ledgerItem.date;
+          }
+        }
+
+        if (feeDateBadge) {
+          if (displayFeeDate) {
+            feeDateBadge.textContent = `📅 ${displayFeeDate}`;
+            feeDateBadge.style.display = "inline-flex";
+          } else {
+            feeDateBadge.style.display = "none";
+          }
+        }
         if (unpaidFeeNotice) unpaidFeeNotice.style.display = "none";
       } else {
-        feeStatusBadge.textContent = "회비 미납 상태";
+        feeStatusBadge.textContent = "🔴 회비 미납 상태";
         feeStatusBadge.style.background = "#fee2e2";
         feeStatusBadge.style.color = "#b91c1c";
+        if (feeDateBadge) {
+          feeDateBadge.style.display = "none";
+        }
         if (unpaidFeeNotice) unpaidFeeNotice.style.display = "block";
       }
     }
@@ -2821,8 +2844,8 @@ const App = {
     const note = document.getElementById("ledgerNote").value.trim();
     const receiptFileInput = document.getElementById("ledgerReceiptFile");
 
-    if (!name || !item || isNaN(amount) || amount <= 0) {
-      this.showToast("⚠️ 올바른 성명, 내역 설명 및 금액을 입력해 주세요.");
+    if (!item || isNaN(amount) || amount <= 0) {
+      this.showToast("⚠️ 올바른 내역 설명 및 금액을 입력해 주세요.");
       return;
     }
 
@@ -2875,7 +2898,7 @@ const App = {
       date: new Date().toISOString().split("T")[0],
       type,
       category,
-      name,
+      name: name || "미지정",
       item,
       amount,
       location: location || "-",
@@ -3062,8 +3085,8 @@ const App = {
     const fileInput = document.getElementById("editLedgerReceiptFile");
     let receiptUrl = document.getElementById("editLedgerExistingReceiptUrl").value;
 
-    if (!name || !itemDesc || isNaN(amount) || amount <= 0 || !date) {
-      this.showToast("⚠️ 올바른 성명, 내역 설명, 금액 및 일자를 입력해 주세요.");
+    if (!itemDesc || isNaN(amount) || amount <= 0 || !date) {
+      this.showToast("⚠️ 올바른 내역 설명, 금액 및 일자를 입력해 주세요.");
       return;
     }
 
@@ -3114,7 +3137,7 @@ const App = {
       date,
       type,
       category,
-      name,
+      name: name || "미지정",
       item: itemDesc,
       amount,
       location: location || "-",

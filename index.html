@@ -370,10 +370,16 @@
           <span id="sidebarMemberRole" class="pill-tag-nvidia" style="margin-top: 6px;">-</span>
 
           <div style="margin-top: 24px; border-top: 1px solid var(--color-hairline); padding-top: 16px;">
-            <div style="font-size: 13px; color: var(--color-mute);">개인 회비 납부 현황:</div>
-            <div id="feeStatusBadge" class="pill-tag-nvidia"
-              style="font-size: 12px; margin-top: 8px; background: #dcfce7; color: #15803d;">
-              회비 납부 완료 (2026-03-05)
+            <div style="font-size: 13px; color: var(--color-mute); margin-bottom: 6px;">개인 회비 납부 현황:</div>
+            <div id="feeStatusWrapper" style="display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: 6px;">
+              <span id="feeStatusBadge" class="pill-tag-nvidia"
+                style="font-size: 12px; background: #dcfce7; color: #15803d; font-weight: 700; padding: 4px 10px;">
+                🟢 회비 납부 완료
+              </span>
+              <span id="feeDateBadge" class="pill-tag-nvidia"
+                style="font-size: 12px; background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; font-weight: 600; padding: 4px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                📅 2026-09-02
+              </span>
             </div>
 
             <!-- 회비 미납 시 계좌 안내 카드 -->
@@ -622,9 +628,8 @@
             <div>
               <label
                 style="display: block; font-size: 13px; font-weight: 700; color: var(--color-ink); margin-bottom: 6px;">성명
-                / 찬조자 / 집행 주체 *</label>
-              <input type="text" id="ledgerName" class="form-input" placeholder="예: 박서연 관리자, 김민준 원우, 13기 집행부"
-                required />
+                / 찬조자 / 집행 주체 (선택)</label>
+              <input type="text" id="ledgerName" class="form-input" placeholder="예: 박서연 관리자, 김민준 원우, 13기 집행부 (미입력 시 미지정)" />
             </div>
           </div>
 
@@ -1454,9 +1459,8 @@
             </select>
           </div>
           <div>
-            <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px;">성명 / 찬조자 / 집행 주체
-              *</label>
-            <input type="text" id="editLedgerName" class="form-input" required />
+            <label style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px;">성명 / 찬조자 / 집행 주체 (선택)</label>
+            <input type="text" id="editLedgerName" class="form-input" placeholder="예: 박서연 관리자, 김민준 원우 (미입력 시 미지정)" />
           </div>
         </div>
 
