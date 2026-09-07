@@ -3861,7 +3861,7 @@ const App = {
                   🕒 등록 일시: ${item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR") : item.date}
                   ${item.updatedAt ? ` (수정됨: ${new Date(item.updatedAt).toLocaleString("ko-KR")})` : ''}
                 </span>
-                ${isAdminOrExec ? `
+                ${canManageGallery ? `
                   <div style="display: flex; gap: 8px;">
                     <button type="button" class="btn btn-outline btn-sm" 
                             style="padding: 4px 12px; font-size: 12px; border-color: #2563eb; color: #2563eb; font-weight: 700; background: rgba(37,99,235,0.06);"
