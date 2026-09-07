@@ -3580,11 +3580,11 @@ const App = {
                 ${this.escapeHtml(item.content)}
               </div>
 
-              <!-- 인포그래픽 배지 및 이미지 구역 -->
-              ${infographicHtml}
-
               <!-- 일반 현장 사진 구역 -->
               ${normalPhotosHtml}
+
+              <!-- 인포그래픽 배지 및 이미지 구역 -->
+              ${infographicHtml}
 
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--color-hairline); flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 12px; color: var(--color-mute);">
