@@ -4020,8 +4020,12 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
       if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
         try {
           await window.FS.setDoc(window.FS.doc(window.db, "gallery", editId), updatedEntry, { merge: true });
+          console.log(`✅ [Firestore] gallery 문서 '${editId}' 클라우드 DB 수정 동기화 성공!`);
         } catch (err) {
-          console.warn("Firestore gallery 수정 동기화 경고:", err);
+          console.error("❌ [Firestore] gallery 수정 동기화 실패 (보안 규칙 또는 네트워크 확인):", err);
+          if (err.code === "permission-denied") {
+            this.showToast("⚠️ Firebase Firestore 보안 규칙에서 'gallery' 컬렉션의 쓰기 권한을 허용해 주세요.");
+          }
         }
       }
 
@@ -4049,8 +4053,12 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
       if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
         try {
           await window.FS.setDoc(window.FS.doc(window.db, "gallery", newEntry.id), newEntry);
+          console.log(`✅ [Firestore] gallery 신규 문서 '${newEntry.id}' 클라우드 DB 등록 성공!`);
         } catch (err) {
-          console.warn("Firestore gallery 등록 동기화 경고:", err);
+          console.error("❌ [Firestore] gallery 신규 등록 실패 (보안 규칙 또는 네트워크 확인):", err);
+          if (err.code === "permission-denied") {
+            this.showToast("⚠️ Firebase Firestore 보안 규칙에서 'gallery' 컬렉션의 쓰기 권한을 허용해 주세요.");
+          }
         }
       }
 
