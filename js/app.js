@@ -3485,13 +3485,13 @@ const App = {
         badgeBg = "#cffafe";
       }
 
+      // 1주차 강의 갤러리 여부 판단 (WEEK 1 / 1주차 / 혁신 리더십 등)
+      const isWeek1 = (item.title && (item.title.includes("1주차") || item.title.includes("WEEK 1") || item.title.includes("1차") || item.title.includes("혁신 리더십") || item.title.includes("지속 성장"))) ||
+                      (item.content && (item.content.includes("1주차") || item.content.includes("WEEK 1") || item.content.includes("1week")));
+
       // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 표시)
       let infographicHtml = "";
       if (infographics.length > 0) {
-        // 1주차 강의 갤러리 여부 판단 (WEEK 1 / 1주차 / 혁신 리더십 등)
-        const isWeek1 = (item.title && (item.title.includes("1주차") || item.title.includes("WEEK 1") || item.title.includes("1차") || item.title.includes("혁신 리더십") || item.title.includes("지속 성장"))) ||
-                        (item.content && (item.content.includes("1주차") || item.content.includes("WEEK 1") || item.content.includes("1week")));
-
         infographicHtml = `
           <div style="margin-top: 18px; padding: 16px; background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
@@ -3534,14 +3534,21 @@ const App = {
               <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(클릭 시 고화질 확대)</span>
             </div>
             <div style="display: grid; grid-template-columns: ${gridCols}; gap: 12px;">
-              ${normalPhotos.map((imgObj, idx) => `
-                <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); aspect-ratio: 4 / 3; background: #000; cursor: zoom-in;"
-                     onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(imgObj.url)}', '${this.escapeHtml(item.title)} - 현장사진 ${idx + 1}')">
-                  <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)}" 
-                       style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; display: block;"
-                       onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
-                </div>
-              `).join("")}
+              ${normalPhotos.map((imgObj, idx) => {
+                let targetNormalZoomUrl = imgObj.url;
+                if (isWeek1) {
+                  if (idx === 0) targetNormalZoomUrl = "images/1week_pic01.jpg";
+                  else if (idx === 1) targetNormalZoomUrl = "images/1week_pic02.jpg";
+                }
+                return `
+                  <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); aspect-ratio: 4 / 3; background: #000; cursor: zoom-in;"
+                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetNormalZoomUrl)}', '${this.escapeHtml(item.title)} - 현장사진 ${idx + 1}')">
+                    <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)}" 
+                         style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; display: block;"
+                         onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
+                  </div>
+                `;
+              }).join("")}
             </div>
           </div>
         `;
