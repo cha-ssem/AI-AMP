@@ -772,7 +772,7 @@ const App = {
     }
 
     container.innerHTML = filtered.map(m => `
-      <div class="product-card" style="padding: 18px 14px;">
+      <div class="product-card" style="padding: 18px 14px; cursor: pointer; transition: all 0.2s ease; position: relative;" onclick="App.openMemberDetailModal('${m.id}')" title="클릭하여 ${this.escapeHtml(m.name)} 원우님의 상세 정보를 확인하세요">
         <span class="corner-square"></span>
         <div>
           <div style="display: flex; gap: 12px; margin-bottom: 12px;">
@@ -802,7 +802,7 @@ const App = {
               <!-- 💡 3줄 : 홈페이지 배지 -->
               ${m.pageURL && m.pageURL.trim() !== '' ? `
                 <div style="margin-top: 4px;">
-                  <a href="${this.escapeHtml(m.pageURL.startsWith('http') ? m.pageURL : 'https://' + m.pageURL)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="height: 19px; min-height: 19px; padding: 0 6px; font-size: 10.5px; display: inline-flex; align-items: center; justify-content: center; gap: 2px; border-radius: 3px; box-sizing: border-box; line-height: 1; white-space: nowrap;" title="회사 홈페이지 새 창 열기">
+                  <a href="${this.escapeHtml(m.pageURL.startsWith('http') ? m.pageURL : 'https://' + m.pageURL)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="height: 19px; min-height: 19px; padding: 0 6px; font-size: 10.5px; display: inline-flex; align-items: center; justify-content: center; gap: 2px; border-radius: 3px; box-sizing: border-box; line-height: 1; white-space: nowrap;" title="회사 홈페이지 새 창 열기" onclick="event.stopPropagation()">
                     🌐 홈페이지
                   </a>
                 </div>
@@ -823,7 +823,7 @@ const App = {
               ` : ''}
             </div>
           </div>
-          ${m.summary ? `<p style="font-size: 13.5px; color: var(--color-body); margin: 10px 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${this.escapeHtml(m.summary)}</p>` : ''}
+          ${m.summary ? `<p style="font-size: 13.5px; color: var(--color-body); margin: 10px 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; word-break: break-word;">${this.escapeHtml(m.summary)}</p>` : ''}
         </div>
 
         <div style="border-top: 1px solid var(--color-hairline); padding-top: 10px; font-size: 12.5px; color: var(--color-mute); display: flex; flex-direction: column; gap: 3px;">
@@ -4467,6 +4467,113 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     } else {
       this.showToast("📋 회비 계좌: 카카오뱅크 79422963241 (예금주: 김정순)");
     }
+  },
+
+  openMemberDetailModal(memberId) {
+    const member = this.members.find(m => m.id === memberId);
+    if (!member) {
+      this.showToast("⚠️ 회원 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const modal = document.getElementById("memberDetailModal");
+    const modalBody = document.getElementById("memberDetailModalBody");
+    if (!modal || !modalBody) return;
+
+    const isGuest = this.currentRole === "guest";
+    const phoneDisplay = member.phone ? (isGuest ? `<span style="color: #94a3b8;">${this.escapeHtml(this.maskPhone(member.phone))} (로그인 시 공개)</span>` : `<a href="tel:${this.escapeHtml(member.phone)}" style="color: var(--color-ink); text-decoration: underline; font-weight: 700;">${this.escapeHtml(member.phone)}</a>`) : `<span style="color: var(--color-mute);">-</span>`;
+    const kakaoDisplay = member.kakaoId ? (isGuest ? `<span style="color: #94a3b8;">${this.escapeHtml(this.maskKakao(member.kakaoId))}</span>` : `<strong style="color: var(--color-ink);">${this.escapeHtml(member.kakaoId)}</strong>`) : `<span style="color: var(--color-mute);">-</span>`;
+    const rawEmail = member.Pemail || member.googleEmail || "";
+    const emailDisplay = rawEmail ? (isGuest ? `<span style="color: #94a3b8;">${this.escapeHtml(this.maskEmail(rawEmail))}</span>` : `<a href="mailto:${this.escapeHtml(rawEmail)}" style="color: var(--color-ink); text-decoration: underline; font-weight: 700;">${this.escapeHtml(rawEmail)}</a>`) : `<span style="color: var(--color-mute);">-</span>`;
+    const locationDisplay = member.location ? this.escapeHtml(member.location) : `<span style="color: var(--color-mute);">-</span>`;
+    const summaryDisplay = member.summary ? this.escapeHtml(member.summary) : "";
+
+    modalBody.innerHTML = `
+      <div style="display: flex; gap: 18px; align-items: flex-start; margin-bottom: 22px; padding-bottom: 18px; border-bottom: 1px solid var(--color-hairline);">
+        <div style="display: flex; flex-direction: column; gap: 8px; align-items: center; flex-shrink: 0;">
+          <img src="${this.escapeHtml(member.avatarUrl)}" alt="${this.escapeHtml(member.name)}" style="width: 76px; height: 76px; border-radius: var(--radius-sm); object-fit: cover; border: 1.5px solid var(--color-hairline); box-shadow: 0 4px 12px rgba(0,0,0,0.06);" />
+          ${member.industry ? `
+            <img src="${this.escapeHtml(this.getIndustryImage(member.industry))}" alt="${this.escapeHtml(member.industry)}" title="${this.escapeHtml(member.industry)}" style="width: 76px; height: 76px; border-radius: var(--radius-sm); object-fit: cover; border: 1.5px solid var(--color-hairline); background: #ffffff;" />
+          ` : ''}
+        </div>
+        <div style="flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-bottom: 6px;">
+            <h3 style="font-size: 22px; font-weight: 800; margin: 0; color: var(--color-ink); line-height: 1.2;">${this.escapeHtml(member.name)}</h3>
+            <div style="display: inline-flex; align-items: center; gap: 4px;">
+              <span class="pill-tag-nvidia" style="background: var(--color-surface-dark); color: #fff; height: 22px; padding: 0 7px; font-size: 11px; font-weight: 700; border-radius: 4px; display: inline-flex; align-items: center;">${member.cohort}기</span>
+              <span class="pill-tag-nvidia" style="background: var(--color-surface-soft); color: var(--color-ink); border: 1px solid var(--color-hairline); height: 22px; padding: 0 7px; font-size: 11px; font-weight: 700; border-radius: 4px; display: inline-flex; align-items: center;">${this.getRoleName(member.role)}</span>
+              ${member.position ? `<span class="pill-tag-nvidia" style="background: rgba(0,0,0,0.05); color: var(--color-ink); border: 1px solid var(--color-hairline); height: 22px; padding: 0 7px; font-size: 11px; font-weight: 600; border-radius: 4px; display: inline-flex; align-items: center;">${this.escapeHtml(member.position)}</span>` : ''}
+            </div>
+          </div>
+
+          ${member.company ? `
+            <div style="margin-top: 6px; font-size: 16px; font-weight: 700; color: var(--color-ink); line-height: 1.3;">
+              🏢 ${this.escapeHtml(member.company)}
+            </div>
+          ` : ''}
+
+          ${member.industry ? `
+            <div style="margin-top: 4px; font-size: 13px; color: var(--color-mute);">
+              업종: <strong style="color: var(--color-ink);">${this.escapeHtml(member.industry)}</strong>
+            </div>
+          ` : ''}
+
+          ${member.pageURL && member.pageURL.trim() !== '' ? `
+            <div style="margin-top: 10px;">
+              <a href="${this.escapeHtml(member.pageURL.startsWith('http') ? member.pageURL : 'https://' + member.pageURL)}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm" style="font-size: 12px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 4px; border-radius: 6px; text-decoration: none;" title="회사 홈페이지 새 창 열기">
+                🌐 회사 홈페이지 바로가기 ↗
+              </a>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+
+      <!-- 연락처 및 네트워크 정보 -->
+      <div style="background: var(--color-surface-soft); padding: 16px 18px; border-radius: 10px; border: 1px solid var(--color-hairline); margin-bottom: 20px;">
+        <div style="font-size: 13px; font-weight: 700; color: var(--color-mute); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
+          <span>📞</span> 네트워크 및 연락처 정보
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; font-size: 13.5px;">
+          <div>
+            <span style="color: var(--color-mute); display: block; font-size: 12px; margin-bottom: 3px;">연락처</span>
+            <div>${phoneDisplay}</div>
+          </div>
+          <div>
+            <span style="color: var(--color-mute); display: block; font-size: 12px; margin-bottom: 3px;">단톡방 프로필 명 / 카카오톡</span>
+            <div>${kakaoDisplay}</div>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <span style="color: var(--color-mute); display: block; font-size: 12px; margin-bottom: 3px;">이메일 (Email)</span>
+            <div>${emailDisplay}</div>
+          </div>
+          <div style="grid-column: 1 / -1;">
+            <span style="color: var(--color-mute); display: block; font-size: 12px; margin-bottom: 3px;">사업장 위치 / 주소</span>
+            <div>📍 ${locationDisplay}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주요 서비스 및 사업 요약 (줄바꿈 온전히 보존 및 전체 내용 출력) -->
+      <div style="margin-bottom: 24px;">
+        <div style="font-size: 14px; font-weight: 700; color: var(--color-ink); margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <span>📋</span> 주요 서비스 및 사업 요약
+        </div>
+        <div style="background: #ffffff; border: 1px solid var(--color-hairline); border-radius: 10px; padding: 16px 18px; font-size: 14px; line-height: 1.7; color: var(--color-body); white-space: pre-line; word-break: break-word; min-height: 80px; max-height: 280px; overflow-y: auto; box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);">
+          ${summaryDisplay ? summaryDisplay : '<span style="color: var(--color-mute); font-style: italic;">등록된 주요 서비스 및 사업 요약 정보가 없습니다.</span>'}
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid var(--color-hairline); padding-top: 16px;">
+        <button type="button" class="btn btn-outline" style="padding: 8px 24px;" onclick="App.closeMemberDetailModal()">닫기</button>
+      </div>
+    `;
+
+    modal.style.display = "flex";
+  },
+
+  closeMemberDetailModal() {
+    const modal = document.getElementById("memberDetailModal");
+    if (modal) modal.style.display = "none";
   },
 
   showToast(message) {
