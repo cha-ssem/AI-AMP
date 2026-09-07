@@ -364,6 +364,7 @@ class StorageService {
     }
     let parsed = JSON.parse(data);
     // 이전 샘플 더미 내역(led-01~led-04) 및 initial_balance 설정 문서 자동 필터링 제거
+    let needsSave = false;
     const filtered = parsed.filter(item => {
       if (!item) return false;
       if (item.id === "initial_balance" || item.isConfig === true) {
@@ -376,8 +377,16 @@ class StorageService {
         return false;
       }
       return item.id !== "led-01" && item.id !== "led-02" && item.id !== "led-03" && item.id !== "led-04";
+    }).map(item => {
+      // 기존 '회원관리 탭 자동 연동' 메모 문구를 '관리자 납부 처리'로 자동 정리
+      if (item && item.note && (item.note.includes("회원관리 탭 자동 연동") || item.note.includes("회원관리 일괄 납부 처리 연동"))) {
+        needsSave = true;
+        return { ...item, note: "관리자 납부 처리" };
+      }
+      return item;
     });
-    if (filtered.length !== parsed.length) {
+
+    if (filtered.length !== parsed.length || needsSave) {
       localStorage.setItem("enterprise_13th_ledger", JSON.stringify(filtered));
     }
     return filtered;

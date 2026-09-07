@@ -337,7 +337,12 @@ const App = {
           return;
         }
 
-        cloudLedger.push({ ...data, id: docId });
+        let normalizedNote = data.note || "-";
+        if (typeof normalizedNote === "string" && (normalizedNote.includes("회원관리 탭 자동 연동") || normalizedNote.includes("회원관리 일괄 납부 처리 연동"))) {
+          normalizedNote = "관리자 납부 처리";
+        }
+
+        cloudLedger.push({ ...data, id: docId, note: normalizedNote });
       });
 
       cloudLedger.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
@@ -2360,6 +2365,15 @@ const App = {
     const ledgerPromises = [];
     const now = Date.now();
 
+    // 💡 회비 납부 처리자(관리자) 식별
+    let processorName = "관리자";
+    if (this.currentUserId) {
+      const adminUser = this.members.find(u => u.id === this.currentUserId || (u.googleUid && u.googleUid === this.currentUserId));
+      if (adminUser && adminUser.name) {
+        processorName = `${adminUser.name}(${this.getRoleName(this.currentRole)})`;
+      }
+    }
+
     targetMembers.forEach((m, idx) => {
       m.feePaid = true;
       m.feeDate = feeDate;
@@ -2389,7 +2403,7 @@ const App = {
         amount: amount,
         location: "-",
         attendees: "-",
-        note: `회원관리 일괄 납부 처리 연동 (${m.cohort}기)`,
+        note: `${processorName} 일괄 납부 처리`,
         receiptUrl: ""
       };
 
@@ -2955,6 +2969,15 @@ const App = {
       }
     }
 
+    // 💡 회비 납부 처리자(관리자) 식별
+    let processorName = "관리자";
+    if (this.currentUserId) {
+      const adminUser = this.members.find(u => u.id === this.currentUserId || (u.googleUid && u.googleUid === this.currentUserId));
+      if (adminUser && adminUser.name) {
+        processorName = `${adminUser.name}(${this.getRoleName(this.currentRole)})`;
+      }
+    }
+
     // 2) 💡 정회원 회비 납부 내역을 장부(ledger) 수입 항목으로 자동 기록 연동!
     const feeLedgerEntry = {
       id: `led-fee-${Date.now()}`,
@@ -2966,7 +2989,7 @@ const App = {
       amount: amount,
       location: "-",
       attendees: "-",
-      note: `회원관리 탭 자동 연동 (${m.cohort}기)`,
+      note: `${processorName} 납부 처리`,
       receiptUrl: ""
     };
 
