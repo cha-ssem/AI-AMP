@@ -1941,6 +1941,23 @@
           </div>
         </div>
 
+        <!-- 3. 강의 관련 YouTube 영상 공유 링크 (선택 사항) -->
+        <div style="margin-bottom: 20px; background: rgba(239, 68, 68, 0.04); border: 1.5px dashed rgba(239, 68, 68, 0.35); border-radius: 8px; padding: 14px 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <span style="font-size: 13px; font-weight: 700; color: #dc2626;">🎬 강의 관련 YouTube 영상 링크 (선택 사항)</span>
+              <span style="font-size: 11.5px; color: var(--color-mute); margin-left: 6px;">* 인포그래픽 우측에 영상 플레이어 자동 임베드</span>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <input type="url" id="galleryYoutubeInput" class="form-input" 
+                   value="https://youtu.be/xvxheeDAJNY?si=flRwQX4aGKbVmdNj"
+                   placeholder="예: https://youtu.be/xxxxxx 또는 https://www.youtube.com/watch?v=xxxxxx" 
+                   oninput="App.previewGalleryYoutube()" style="flex: 1;" />
+          </div>
+          <div id="galleryYoutubePreviewContainer" style="display: none; margin-top: 12px;"></div>
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--color-hairline); padding-top: 16px;">
           <button type="button" class="btn btn-outline btn-sm" onclick="App.closeGalleryModal()">취소</button>
           <button id="gallerySubmitBtn" type="submit" class="btn btn-primary btn-sm" style="font-weight: 700; padding: 8px 18px;">

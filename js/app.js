@@ -22,6 +22,7 @@ const App = {
   activeGalleryId: null,
   tempGalleryPhotos: [],
   tempGalleryInfographics: [],
+  DEFAULT_GALLERY_YOUTUBE_URL: "https://youtu.be/xvxheeDAJNY?si=flRwQX4aGKbVmdNj",
   SESSION_TIMEOUT_MS: 30 * 60 * 1000, // 30분 세션 유효시간
   _lastActiveUpdate: 0,
   _sessionInterval: null,
@@ -4115,32 +4116,83 @@ const App = {
         parsedWeekNum = 1;
       }
 
-      // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 표시)
-      let infographicHtml = "";
+      // 1. 강의 내용 인포그래픽 & YouTube 영상 듀얼 렌더링
+      const youtubeVideoId = this.extractYoutubeVideoId(item.youtubeUrl || item.videoUrl || (item.category === "특강/세미나" ? this.DEFAULT_GALLERY_YOUTUBE_URL : ""));
+      let mediaSectionHtml = "";
+
+      // 1-A. YouTube 영상 HTML 템플릿
+      let youtubeCardHtml = "";
+      if (youtubeVideoId) {
+        youtubeCardHtml = `
+          <div style="padding: 16px; background: rgba(239, 68, 68, 0.04); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
+              <span style="background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);">
+                🎬 강의 관련 영상 (YouTube)
+              </span>
+              <a href="https://www.youtube.com/watch?v=${youtubeVideoId}" target="_blank" rel="noopener noreferrer" 
+                 style="font-size: 11.5px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"
+                 onclick="event.stopPropagation()">
+                🔗 YouTube에서 열기 ↗
+              </a>
+            </div>
+            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+              <iframe src="https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0" 
+                      title="${this.escapeHtml(item.title)} 관련 영상" 
+                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      allowfullscreen></iframe>
+            </div>
+          </div>
+        `;
+      }
+
+      // 1-B. 인포그래픽 HTML 템플릿
+      let infographicCardHtml = "";
       if (infographics.length > 0) {
-        infographicHtml = `
-          <div style="margin-top: 18px; padding: 16px; background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 8px;">
+        infographicCardHtml = `
+          <div style="padding: 16px; background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 8px; display: flex; flex-direction: column;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
               <span style="background: #4f46e5; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);">
                 📊 강의 내용 인포그래픽 (${infographics.length}장)
               </span>
               <span style="font-size: 11.5px; color: var(--color-mute);">🔍 클릭 시 원본 고화질 확대</span>
             </div>
-            <div style="display: grid; grid-template-columns: ${infographics.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))'}; gap: 12px;">
+            <div style="display: grid; grid-template-columns: ${infographics.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(200px, 1fr))'}; gap: 10px; flex: 1; align-items: center;">
               ${infographics.map((imgObj, idx) => {
-                // 주차별 인포그래픽 명명 규칙: images/{N}week_lecture_summary.png
                 const targetZoomUrl = (parsedWeekNum && idx === 0) ? `images/${parsedWeekNum}week_lecture_summary.png` : imgObj.url;
                 const displayThumbnail = imgObj.url || (parsedWeekNum ? `images/${parsedWeekNum}week_lecture_summary.png` : "");
                 return `
                   <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); background: #1e1e2e; cursor: zoom-in; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
                        onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetZoomUrl)}', '${this.escapeHtml(item.title)} - ${parsedWeekNum ? parsedWeekNum + '주차 ' : ''}강의 요약 인포그래픽', '${this.escapeHtml(imgObj.url)}')">
                     <img src="${this.escapeHtml(displayThumbnail)}" alt="${this.escapeHtml(item.title)} 인포그래픽" 
-                         style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
+                         style="width: 100%; height: auto; max-height: 380px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
                          onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
                   </div>
                 `;
               }).join("")}
             </div>
+          </div>
+        `;
+      }
+
+      // 1-C. 듀얼 배치 결합 (인포그래픽 왼쪽, YouTube 오른쪽)
+      if (infographics.length > 0 && youtubeVideoId) {
+        mediaSectionHtml = `
+          <div style="margin-top: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px;">
+            ${infographicCardHtml}
+            ${youtubeCardHtml}
+          </div>
+        `;
+      } else if (infographics.length > 0) {
+        mediaSectionHtml = `
+          <div style="margin-top: 18px;">
+            ${infographicCardHtml}
+          </div>
+        `;
+      } else if (youtubeVideoId) {
+        mediaSectionHtml = `
+          <div style="margin-top: 18px;">
+            ${youtubeCardHtml}
           </div>
         `;
       }
@@ -4162,7 +4214,6 @@ const App = {
             </div>
             <div style="display: grid; grid-template-columns: ${gridCols}; gap: 12px;">
               ${normalPhotos.map((imgObj, idx) => {
-                // 주차별 현장 사진 명명 규칙: images/{N}week_pic01.jpg, images/{N}week_pic02.jpg, ...
                 const picNumStr = String(idx + 1).padStart(2, "0");
                 const targetNormalZoomUrl = parsedWeekNum ? `images/${parsedWeekNum}week_pic${picNumStr}.jpg` : imgObj.url;
                 return `
@@ -4203,6 +4254,7 @@ const App = {
               <div style="font-size: 12.5px; color: var(--color-mute); display: flex; align-items: center; gap: 8px;">
                 <span>✍️ ${this.escapeHtml(item.author || '13기 원우')}</span>
                 ${infographics.length > 0 ? `<span style="color: #4f46e5; font-weight: 700; background: #e0e7ff; padding: 1px 6px; border-radius: 3px; font-size: 11px;">📊 인포그래픽</span>` : ''}
+                ${youtubeVideoId ? `<span style="color: #dc2626; font-weight: 700; background: #fee2e2; padding: 1px 6px; border-radius: 3px; font-size: 11px;">🎬 영상</span>` : ''}
                 ${totalImageCount > 0 ? `<span style="color: #2563eb; font-weight: 600;">📷 ${totalImageCount}장</span>` : ''}
               </div>
               <div style="width: 28px; height: 28px; border-radius: 50%; background: ${isOpen ? 'var(--color-primary)' : 'var(--color-surface-soft)'}; color: ${isOpen ? '#fff' : 'var(--color-mute)'}; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: transform 0.25s ease; transform: ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};">
@@ -4223,8 +4275,8 @@ const App = {
               <!-- 일반 현장 사진 구역 -->
               ${normalPhotosHtml}
 
-              <!-- 인포그래픽 배지 및 이미지 구역 -->
-              ${infographicHtml}
+              <!-- 강의 내용 인포그래픽 및 YouTube 영상 듀얼 구역 -->
+              ${mediaSectionHtml}
 
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--color-hairline); flex-wrap: wrap; gap: 10px;">
                 <span style="font-size: 12px; color: var(--color-mute);">
@@ -4251,6 +4303,49 @@ const App = {
         </div>
       `;
     }).join("");
+  },
+
+  /* 💡 YouTube 공유 URL에서 11자리 비디오 ID 추출 헬퍼 */
+  extractYoutubeVideoId(url) {
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    const regExp = /(?:youtube(?:-nocookie)?\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts|live)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = trimmed.match(regExp);
+    return match ? match[1] : null;
+  },
+
+  /* 💡 모달 내 YouTube 입력 시 실시간 미리보기 */
+  previewGalleryYoutube() {
+    const input = document.getElementById("galleryYoutubeInput");
+    const container = document.getElementById("galleryYoutubePreviewContainer");
+    if (!input || !container) return;
+
+    const val = input.value.trim();
+    const videoId = this.extractYoutubeVideoId(val);
+
+    if (videoId) {
+      container.style.display = "block";
+      container.innerHTML = `
+        <div style="background: var(--color-surface); border: 1px solid #ef4444; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #dc2626; font-weight: 700;">
+            <span>🎬 영상 연결 완료 (ID: ${videoId})</span>
+            <button type="button" onclick="document.getElementById('galleryYoutubeInput').value=''; App.previewGalleryYoutube();" 
+                    style="background: none; border: none; color: var(--color-mute); font-size: 11px; cursor: pointer; text-decoration: underline;">
+              지우기
+            </button>
+          </div>
+          <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #000;">
+            <iframe src="https://www.youtube-nocookie.com/embed/${videoId}" 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen></iframe>
+          </div>
+        </div>
+      `;
+    } else {
+      container.style.display = "none";
+      container.innerHTML = "";
+    }
   },
 
   /* 갤러리 등록 모달 (일반 신규) */
@@ -4287,6 +4382,10 @@ const App = {
         authorInput.value = "13기 집행부";
       }
     }
+
+    const ytInput = document.getElementById("galleryYoutubeInput");
+    if (ytInput) ytInput.value = this.DEFAULT_GALLERY_YOUTUBE_URL;
+    this.previewGalleryYoutube();
 
     this.tempGalleryPhotos = [];
     this.tempGalleryInfographics = [];
@@ -4361,6 +4460,10 @@ const App = {
 ${l.description || '강의의 핵심 인사이트와 현장에서 나눈 생생한 질의응답 내용을 기록해 보세요.'}`;
     }
 
+    const ytInput = document.getElementById("galleryYoutubeInput");
+    if (ytInput) ytInput.value = l.youtubeUrl || this.DEFAULT_GALLERY_YOUTUBE_URL;
+    this.previewGalleryYoutube();
+
     this.tempGalleryPhotos = [];
     this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
@@ -4429,6 +4532,10 @@ ${l.description || '강의의 핵심 인사이트와 현장에서 나눈 생생�
 ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이야기를 기록해 보세요.'}`;
     }
 
+    const ytInput = document.getElementById("galleryYoutubeInput");
+    if (ytInput) ytInput.value = ev.youtubeUrl || this.DEFAULT_GALLERY_YOUTUBE_URL;
+    this.previewGalleryYoutube();
+
     this.tempGalleryPhotos = [];
     this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
@@ -4479,6 +4586,10 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     const contentInput = document.getElementById("galleryContentInput");
     if (contentInput) contentInput.value = item.content || "";
 
+    const ytInput = document.getElementById("galleryYoutubeInput");
+    if (ytInput) ytInput.value = item.youtubeUrl || item.videoUrl || "";
+    this.previewGalleryYoutube();
+
     // 기존 사진 배열 복원 (일반 사진과 인포그래픽 분리 로드)
     const allImages = (item.images || []).map(img => {
       if (typeof img === "string") return { url: img, isInfographic: false };
@@ -4506,6 +4617,9 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     if (form) form.reset();
     const editIdInput = document.getElementById("galleryEditId");
     if (editIdInput) editIdInput.value = "";
+    const ytInput = document.getElementById("galleryYoutubeInput");
+    if (ytInput) ytInput.value = "";
+    this.previewGalleryYoutube();
     this.tempGalleryPhotos = [];
     this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
@@ -4713,6 +4827,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     const date = document.getElementById("galleryDateInput").value;
     const authorInput = document.getElementById("galleryAuthorInput").value.trim();
     const content = document.getElementById("galleryContentInput").value.trim();
+    const youtubeUrl = (document.getElementById("galleryYoutubeInput")?.value || "").trim();
 
     if (!title || !date || !content) {
       this.showToast("⚠️ 행사명, 일자 및 본문 내용을 모두 입력해주세요.");
@@ -4745,6 +4860,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
         date,
         author: authorInput || defaultAuthor,
         content,
+        youtubeUrl: youtubeUrl || "",
         images: combinedImages,
         updatedAt: new Date().toISOString()
       };
@@ -4777,6 +4893,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
         date,
         author: authorInput || defaultAuthor,
         content,
+        youtubeUrl: youtubeUrl || "",
         images: combinedImages,
         createdAt: new Date().toISOString()
       };
