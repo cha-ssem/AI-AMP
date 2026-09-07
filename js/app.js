@@ -13,15 +13,20 @@ const App = {
   lectures: [],
   events: [],
   ledger: [],
+  gallery: [],
   initialBalance: 0,
   initialBalanceUpdatedAt: "",
   currentUserId: "mem-1301",
+  currentGalleryCategory: "all",
+  activeGalleryId: null,
+  tempGalleryPhotos: [],
 
   init() {
     this.members = StorageService.getMembers();
     this.lectures = StorageService.getLectures();
     this.events = StorageService.getEvents();
     this.ledger = StorageService.getLedger();
+    this.gallery = StorageService.getGallery();
     this.initialBalance = StorageService.getInitialBalance();
     this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
 
@@ -44,12 +49,13 @@ const App = {
     this.updateRoleUI();
     this.renderCurrentTab();
 
-    // 💡 Firebase Firestore 클라우드 DB의 최신 회원 데이터, 강의 커리큘럼, 네트워킹 행사, 장부 데이터 비동기 동기화
+    // 💡 Firebase Firestore 클라우드 DB의 최신 회원 데이터, 강의 커리큘럼, 네트워킹 행사, 장부, 갤러리 데이터 비동기 동기화
     setTimeout(() => {
       if (typeof this.fetchCloudMembers === "function") this.fetchCloudMembers();
       if (typeof this.fetchCloudLectures === "function") this.fetchCloudLectures();
       if (typeof this.fetchCloudEvents === "function") this.fetchCloudEvents();
       if (typeof this.fetchCloudLedger === "function") this.fetchCloudLedger();
+      if (typeof this.fetchCloudGallery === "function") this.fetchCloudGallery();
     }, 300);
   },
 
@@ -181,6 +187,9 @@ const App = {
       if (e.key === "Escape") {
         this.closeEditLectureModal();
         this.closeImageZoomModal();
+        this.closeGalleryModal();
+        this.closeReceiptZoomModal();
+        this.closeAccountInfoModal();
       }
     });
   },
@@ -341,6 +350,33 @@ const App = {
     }
   },
 
+  async fetchCloudGallery() {
+    if (!window.db || !window.FS || !window.FS.getDocs) return;
+
+    try {
+      const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "gallery"));
+      if (!querySnapshot || querySnapshot.empty) return;
+
+      const cloudGallery = [];
+      querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        cloudGallery.push({ ...data, id: docSnap.id || data.id });
+      });
+
+      if (cloudGallery.length > 0) {
+        cloudGallery.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+        this.gallery = cloudGallery;
+        StorageService.saveGallery(this.gallery);
+
+        if (this.currentTab === "gallery") {
+          this.renderGallery();
+        }
+      }
+    } catch (err) {
+      console.warn("Firestore gallery 클라우드 DB 로딩 예외 (로컬 Fallback 유지):", err);
+    }
+  },
+
   // 💡 XSS(Cross-Site Scripting) 방어 헬퍼 함수
   escapeHtml(str) {
     if (str === null || str === undefined) return "";
@@ -436,11 +472,13 @@ const App = {
 
     const adminNavTab = document.getElementById("navAdminTab");
     const mobileNavAdminBtn = document.getElementById("mobileNavAdminBtn");
+    const galleryAdminAddBtn = document.getElementById("galleryAdminAddBtn");
     const isAdminOrExec = this.currentRole === "admin" || this.currentRole === "exec";
 
     // 일반회원, 정회원의 경우 관리자/장부 탭을 완벽히 숨김 (임원 및 관리자만 노출)
     if (adminNavTab) adminNavTab.style.display = isAdminOrExec ? "block" : "none";
     if (mobileNavAdminBtn) mobileNavAdminBtn.style.display = isAdminOrExec ? "flex" : "none";
+    if (galleryAdminAddBtn) galleryAdminAddBtn.style.display = isAdminOrExec ? "inline-flex" : "none";
 
     // 권한이 일반회원 또는 정회원으로 하향된 상태에서 현재 탭이 admin 탭인 경우 홈 탭으로 자동 이동
     if (!isAdminOrExec && this.currentTab === "admin") {
@@ -506,6 +544,9 @@ const App = {
         break;
       case "schedule":
         this.renderSchedule();
+        break;
+      case "gallery":
+        this.renderGallery();
         break;
       case "profile":
         this.renderProfile();
@@ -786,12 +827,15 @@ const App = {
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                   <span class="pill-tag-nvidia">WEEK ${l.week}</span>
                   ${isExecOrAdmin ? `
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px;" onclick="App.openEditLectureModal(${l.week})">
                         ✏️ 수정
                       </button>
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #dc2626; color: #dc2626;" onclick="App.deleteLecture(${l.week})">
                         🗑️ 삭제
+                      </button>
+                      <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #2563eb; color: #2563eb; background: rgba(37,99,235,0.06); font-weight: 700;" onclick="App.openGalleryModalFromLecture(${l.week})" title="이 강의 내용을 바탕으로 갤러리 게시글 작성">
+                        📸 Gallery 등록
                       </button>
                     </div>
                   ` : ''}
@@ -849,12 +893,15 @@ const App = {
                     ${ev.cohort || 13}기 특별 행사
                   </span>
                   ${isExecOrAdmin ? `
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #f59e0b; color: #f59e0b;" onclick="App.openEditNetworkingEventModal('${ev.id}')">
                         ✏️ 수정
                       </button>
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #dc2626; color: #dc2626;" onclick="App.deleteNetworkingEvent('${ev.id}')">
                         🗑️ 삭제
+                      </button>
+                      <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #2563eb; color: #2563eb; background: rgba(37,99,235,0.06); font-weight: 700;" onclick="App.openGalleryModalFromEvent('${ev.id}')" title="이 행사 내용을 바탕으로 갤러리 게시글 작성">
+                        📸 Gallery 등록
                       </button>
                     </div>
                   ` : ''}
@@ -3339,6 +3386,706 @@ const App = {
       modal.classList.remove("active");
       modal.style.display = "none";
     }
+  },
+
+  /* 4. GALLERY TAB LOGIC & ACCORDION */
+  setGalleryCategory(category, btnEl) {
+    this.currentGalleryCategory = category;
+    document.querySelectorAll(".gallery-cat-btn").forEach(b => b.classList.remove("active"));
+    if (btnEl) btnEl.classList.add("active");
+    this.renderGallery();
+  },
+
+  toggleGalleryAccordion(id) {
+    if (this.activeGalleryId === id) {
+      this.activeGalleryId = null; // 이미 열린 블록 클릭 시 닫힘 토글
+    } else {
+      this.activeGalleryId = id; // 해당 블록 열리고 다른 블록은 자동으로 닫힘
+    }
+    this.renderGallery();
+  },
+
+  renderGallery() {
+    const restrictedCard = document.getElementById("guestGalleryRestrictedCard");
+    const contentContainer = document.getElementById("galleryMainContentContainer");
+    const adminAddBtn = document.getElementById("galleryAdminAddBtn");
+    const isAdminOrExec = this.currentRole === "admin" || this.currentRole === "exec";
+
+    // 💡 1. 미가입 비회원(guest)인 경우 열람 제한 및 회원가입 안내 카드 노출
+    if (this.currentRole === "guest") {
+      if (restrictedCard) restrictedCard.style.display = "block";
+      if (contentContainer) contentContainer.style.display = "none";
+      if (adminAddBtn) adminAddBtn.style.display = "none";
+      return;
+    }
+
+    // 💡 2. 가입된 회원(regular, full, exec, admin)인 경우 갤러리 열람 허용
+    if (restrictedCard) restrictedCard.style.display = "none";
+    if (contentContainer) contentContainer.style.display = "block";
+    if (adminAddBtn) adminAddBtn.style.display = isAdminOrExec ? "inline-flex" : "none";
+
+    const listContainer = document.getElementById("galleryAccordionList");
+    if (!listContainer) return;
+
+    const searchInput = document.getElementById("gallerySearchInput");
+    const searchQuery = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    const selectedCategory = this.currentGalleryCategory || "all";
+
+    const filtered = (this.gallery || []).filter(item => {
+      if (selectedCategory !== "all" && item.category !== selectedCategory) {
+        return false;
+      }
+      if (searchQuery) {
+        const fullText = `${item.title || ""} ${item.author || ""} ${item.content || ""} ${item.category || ""} ${item.date || ""}`.toLowerCase();
+        if (!fullText.includes(searchQuery)) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      listContainer.innerHTML = `
+        <div class="product-card" style="text-align: center; padding: 48px 20px; color: var(--color-mute);">
+          <div style="font-size: 38px; margin-bottom: 12px;">📷</div>
+          <div style="font-size: 16px; font-weight: 700; color: var(--color-ink); margin-bottom: 6px;">조건에 해당하는 행사 갤러리가 없습니다.</div>
+          <div style="font-size: 13.5px;">${isAdminOrExec ? "Curriculum 메뉴에서 '📸 Gallery 등록'을 누르거나 상단 등록 버튼을 이용해 소중한 강의/행사 기록을 공유해보세요!" : "새로운 강의 및 행사 기록이 등록되면 이곳에서 확인하실 수 있습니다."}</div>
+        </div>
+      `;
+      return;
+    }
+
+    listContainer.innerHTML = filtered.map(item => {
+      const isOpen = this.activeGalleryId === item.id;
+      const rawImages = item.images || [];
+      
+      // 이미지 하위 호환 정규화 (문자열 또는 객체 { url, isInfographic })
+      const normalizedImages = rawImages.map(img => {
+        if (typeof img === "string") {
+          return { url: img, isInfographic: false };
+        }
+        return { url: img.url || "", isInfographic: !!img.isInfographic };
+      }).filter(img => !!img.url);
+
+      const infographics = normalizedImages.filter(img => img.isInfographic);
+      const normalPhotos = normalizedImages.filter(img => !img.isInfographic);
+      const totalImageCount = normalizedImages.length;
+      
+      let badgeColor = "#2563eb";
+      let badgeBg = "#eff6ff";
+      if (item.category === "공식행사") {
+        badgeColor = "#15803d";
+        badgeBg = "#dcfce7";
+      } else if (item.category === "특강/세미나") {
+        badgeColor = "#7c3aed";
+        badgeBg = "#f5f3ff";
+      } else if (item.category === "네트워킹/친목") {
+        badgeColor = "#c2410c";
+        badgeBg = "#ffedd5";
+      } else if (item.category === "워크숍/견학") {
+        badgeColor = "#0e7490";
+        badgeBg = "#cffafe";
+      }
+
+      // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 상단 강조)
+      let infographicHtml = "";
+      if (infographics.length > 0) {
+        infographicHtml = `
+          <div style="margin-top: 18px; padding: 16px; background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
+              <span style="background: #4f46e5; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(79, 70, 229, 0.3);">
+                📊 강의 내용 인포그래픽 (${infographics.length}장)
+              </span>
+              <span style="font-size: 11.5px; color: var(--color-mute);">🔍 클릭 시 원본 고화질 확대</span>
+            </div>
+            <div style="display: grid; grid-template-columns: ${infographics.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))'}; gap: 12px;">
+              ${infographics.map((imgObj, idx) => `
+                <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); background: #1e1e2e; cursor: zoom-in; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
+                     onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(imgObj.url)}', '${this.escapeHtml(item.title)} - 인포그래픽 ${idx + 1}')">
+                  <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)} 인포그래픽" 
+                       style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
+                       onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      // 2. 일반 현장 스케치 사진 그리드 (최대 4장 중 인포그래픽 제외 일반 사진)
+      let normalPhotosHtml = "";
+      if (normalPhotos.length > 0) {
+        let gridCols = "repeat(auto-fit, minmax(180px, 1fr))";
+        if (normalPhotos.length === 1) gridCols = "1fr";
+        else if (normalPhotos.length === 2) gridCols = "1fr 1fr";
+        else if (normalPhotos.length === 3) gridCols = "repeat(3, 1fr)";
+        else if (normalPhotos.length === 4) gridCols = "repeat(2, 1fr)";
+
+        normalPhotosHtml = `
+          <div style="margin-top: 18px; border-top: 1px dashed var(--color-hairline); padding-top: 16px;">
+            <div style="font-size: 12.5px; font-weight: 700; color: var(--color-mute); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 6px;">📷 현장 스케치 사진 (${normalPhotos.length}장)</span>
+              <span style="font-size: 11px; font-weight: normal; opacity: 0.8;">(클릭 시 고화질 확대)</span>
+            </div>
+            <div style="display: grid; grid-template-columns: ${gridCols}; gap: 12px;">
+              ${normalPhotos.map((imgObj, idx) => `
+                <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); aspect-ratio: 4 / 3; background: #000; cursor: zoom-in;"
+                     onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(imgObj.url)}', '${this.escapeHtml(item.title)} - 현장사진 ${idx + 1}')">
+                  <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)}" 
+                       style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; display: block;"
+                       onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
+                </div>
+              `).join("")}
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="product-card gallery-accordion-item" 
+             style="cursor: pointer; transition: all 0.25s ease; border-color: ${isOpen ? 'var(--color-primary)' : 'var(--color-hairline)'}; box-shadow: ${isOpen ? '0 10px 25px -5px rgba(0,0,0,0.08)' : 'none'}; padding: 0; overflow: hidden;"
+             onclick="App.toggleGalleryAccordion('${item.id}')">
+          <span class="corner-square"></span>
+          
+          <!-- 아코디언 헤더 (텍스트 블록) -->
+          <div style="padding: 18px 22px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; background: ${isOpen ? 'rgba(0,0,0,0.02)' : 'transparent'};">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1; min-width: 240px; flex-wrap: wrap;">
+              <span class="pill-tag-nvidia" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11.5px; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
+                ${this.escapeHtml(item.category || '공식행사')}
+              </span>
+              <span style="font-size: 12.5px; font-weight: 700; color: #2563eb; background: #eff6ff; padding: 2px 8px; border-radius: 4px; border: 1px solid #dbeafe;">
+                📅 ${this.escapeHtml(item.date || '-')}
+              </span>
+              <h4 style="font-size: 16.5px; font-weight: 700; margin: 0; color: var(--color-ink); flex: 1; letter-spacing: -0.3px;">
+                ${this.escapeHtml(item.title)}
+              </h4>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 14px;">
+              <div style="font-size: 12.5px; color: var(--color-mute); display: flex; align-items: center; gap: 8px;">
+                <span>✍️ ${this.escapeHtml(item.author || '13기 원우')}</span>
+                ${infographics.length > 0 ? `<span style="color: #4f46e5; font-weight: 700; background: #e0e7ff; padding: 1px 6px; border-radius: 3px; font-size: 11px;">📊 인포그래픽</span>` : ''}
+                ${totalImageCount > 0 ? `<span style="color: #2563eb; font-weight: 600;">📷 ${totalImageCount}장</span>` : ''}
+              </div>
+              <div style="width: 28px; height: 28px; border-radius: 50%; background: ${isOpen ? 'var(--color-primary)' : 'var(--color-surface-soft)'}; color: ${isOpen ? '#fff' : 'var(--color-mute)'}; display: flex; align-items: center; justify-content: center; font-size: 11px; transition: transform 0.25s ease; transform: ${isOpen ? 'rotate(180deg)' : 'rotate(0deg)'};">
+                ▼
+              </div>
+            </div>
+          </div>
+
+          <!-- 아코디언 바디 (클릭 시 펼쳐지는 세부 내용) -->
+          ${isOpen ? `
+            <div style="padding: 20px 22px 22px; border-top: 1px solid var(--color-hairline); background: var(--color-surface);" onclick="event.stopPropagation()">
+              
+              <!-- 본문 텍스트 -->
+              <div style="font-size: 14.5px; line-height: 1.75; color: var(--color-ink); white-space: pre-line; word-break: break-word;">
+                ${this.escapeHtml(item.content)}
+              </div>
+
+              <!-- 인포그래픽 배지 및 이미지 구역 -->
+              ${infographicHtml}
+
+              <!-- 일반 현장 사진 구역 -->
+              ${normalPhotosHtml}
+
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--color-hairline); flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 12px; color: var(--color-mute);">
+                  🕒 등록 일시: ${item.createdAt ? new Date(item.createdAt).toLocaleString("ko-KR") : item.date}
+                  ${item.updatedAt ? ` (수정됨: ${new Date(item.updatedAt).toLocaleString("ko-KR")})` : ''}
+                </span>
+                ${isAdminOrExec ? `
+                  <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-outline btn-sm" 
+                            style="padding: 4px 12px; font-size: 12px; border-color: #2563eb; color: #2563eb; font-weight: 700; background: rgba(37,99,235,0.06);"
+                            onclick="App.openEditGalleryModal('${this.escapeHtml(item.id)}')">
+                      ✏️ 세부내용 수정
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" 
+                            style="padding: 4px 12px; font-size: 12px; border-color: #ef4444; color: #ef4444; font-weight: 600;"
+                            onclick="App.deleteGalleryItem('${this.escapeHtml(item.id)}')">
+                      🗑️ 삭제
+                    </button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join("");
+  },
+
+  /* 갤러리 등록 모달 (일반 신규) */
+  openGalleryModal() {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 등록 및 관리는 관리자 모드(임원/관리자)에서만 가능합니다.");
+      return;
+    }
+
+    const modal = document.getElementById("galleryModal");
+    if (!modal) return;
+
+    const editIdInput = document.getElementById("galleryEditId");
+    if (editIdInput) editIdInput.value = "";
+
+    const titleHeader = document.getElementById("galleryModalTitle");
+    if (titleHeader) titleHeader.textContent = "📸 새 행사 이야기 & 사진 등록";
+
+    const submitBtn = document.getElementById("gallerySubmitBtn");
+    if (submitBtn) submitBtn.textContent = "💾 갤러리 스토리 등록 및 클라우드 동기화";
+
+    const form = document.getElementById("addGalleryForm");
+    if (form) form.reset();
+
+    const dateInput = document.getElementById("galleryDateInput");
+    if (dateInput) dateInput.value = new Date().toLocaleDateString("sv-SE");
+
+    const authorInput = document.getElementById("galleryAuthorInput");
+    if (authorInput) {
+      if (this.currentUserId) {
+        const me = this.members.find(m => m.id === this.currentUserId || (m.googleUid && m.googleUid === this.currentUserId));
+        authorInput.value = me ? `${me.name} (${me.company || '13기'})` : "13기 집행부";
+      } else {
+        authorInput.value = "13기 집행부";
+      }
+    }
+
+    this.tempGalleryPhotos = [];
+    this.renderGalleryPhotoPreviews();
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.zIndex = "9999";
+  },
+
+  /* 💡 Curriculum 각 주차별 카드에서 'Gallery 등록' 클릭 시 자동 프리필 */
+  openGalleryModalFromLecture(week) {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 등록은 관리자 모드(임원/관리자)에서만 가능합니다.");
+      return;
+    }
+
+    const l = (this.lectures || []).find(lec => lec.week === week);
+    if (!l) {
+      this.showToast("⚠️ 해당 주차의 강의 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const modal = document.getElementById("galleryModal");
+    if (!modal) return;
+
+    const editIdInput = document.getElementById("galleryEditId");
+    if (editIdInput) editIdInput.value = "";
+
+    const titleHeader = document.getElementById("galleryModalTitle");
+    if (titleHeader) titleHeader.textContent = `📸 [WEEK ${l.week}] 커리큘럼 갤러리 등록`;
+
+    const submitBtn = document.getElementById("gallerySubmitBtn");
+    if (submitBtn) submitBtn.textContent = "💾 갤러리 스토리 등록 및 클라우드 동기화";
+
+    const titleInput = document.getElementById("galleryTitleInput");
+    if (titleInput) titleInput.value = `[WEEK ${l.week} 특강] ${l.title}`;
+
+    const catInput = document.getElementById("galleryCategoryInput");
+    if (catInput) catInput.value = "특강/세미나";
+
+    // 날짜 파싱 (예: "2026-09-12 (토) 13:30" -> "2026-09-12")
+    const dateInput = document.getElementById("galleryDateInput");
+    if (dateInput) {
+      const match = (l.date || "").match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+      if (match) {
+        const y = match[1];
+        const m = match[2].padStart(2, "0");
+        const d = match[3].padStart(2, "0");
+        dateInput.value = `${y}-${m}-${d}`;
+      } else {
+        dateInput.value = new Date().toLocaleDateString("sv-SE");
+      }
+    }
+
+    const authorInput = document.getElementById("galleryAuthorInput");
+    if (authorInput) {
+      authorInput.value = l.speaker ? `강사: ${l.speaker}` : "13기 집행부";
+    }
+
+    const contentInput = document.getElementById("galleryContentInput");
+    if (contentInput) {
+      contentInput.value = `🎙️ [강의 개요 및 주제]
+• 주차: ${l.week}주차 특강
+• 강의명: ${l.title}
+• 초빙 강사: ${l.speaker}${l.speakerBio ? ` (${l.speakerBio})` : ''}
+• 일시: ${l.date}
+• 장소: ${l.location}
+
+📝 [강의 내용 및 현장 스케치]
+${l.description || '강의의 핵심 인사이트와 현장에서 나눈 생생한 질의응답 내용을 기록해 보세요.'}`;
+    }
+
+    this.tempGalleryPhotos = [];
+    this.renderGalleryPhotoPreviews();
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.zIndex = "9999";
+  },
+
+  /* 💡 네트워킹 행사 카드에서 'Gallery 등록' 클릭 시 자동 프리필 */
+  openGalleryModalFromEvent(eventId) {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 등록은 관리자 모드(임원/관리자)에서만 가능합니다.");
+      return;
+    }
+
+    const ev = (this.events || []).find(e => e.id === eventId);
+    if (!ev) {
+      this.showToast("⚠️ 해당 행사 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    const modal = document.getElementById("galleryModal");
+    if (!modal) return;
+
+    const editIdInput = document.getElementById("galleryEditId");
+    if (editIdInput) editIdInput.value = "";
+
+    const titleHeader = document.getElementById("galleryModalTitle");
+    if (titleHeader) titleHeader.textContent = `📸 [${ev.cohort || 13}기 행사] 갤러리 등록`;
+
+    const submitBtn = document.getElementById("gallerySubmitBtn");
+    if (submitBtn) submitBtn.textContent = "💾 갤러리 스토리 등록 및 클라우드 동기화";
+
+    const titleInput = document.getElementById("galleryTitleInput");
+    if (titleInput) titleInput.value = `[${ev.cohort || 13}기 공식행사] ${ev.title}`;
+
+    const catInput = document.getElementById("galleryCategoryInput");
+    if (catInput) catInput.value = "공식행사";
+
+    const dateInput = document.getElementById("galleryDateInput");
+    if (dateInput) {
+      const match = (ev.date || "").match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+      if (match) {
+        const y = match[1];
+        const m = match[2].padStart(2, "0");
+        const d = match[3].padStart(2, "0");
+        dateInput.value = `${y}-${m}-${d}`;
+      } else {
+        dateInput.value = new Date().toLocaleDateString("sv-SE");
+      }
+    }
+
+    const authorInput = document.getElementById("galleryAuthorInput");
+    if (authorInput) authorInput.value = "13기 집행부";
+
+    const contentInput = document.getElementById("galleryContentInput");
+    if (contentInput) {
+      contentInput.value = `🎉 [행사 개요]
+• 행사명: ${ev.title}
+• 일시: ${ev.date}
+• 장소: ${ev.location}
+
+📝 [행사 스토리 및 현장 스케치]
+${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이야기를 기록해 보세요.'}`;
+    }
+
+    this.tempGalleryPhotos = [];
+    this.renderGalleryPhotoPreviews();
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.zIndex = "9999";
+  },
+
+  /* 💡 갤러리 세부 내용 수정 모달 오픈 */
+  openEditGalleryModal(id) {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 수정은 관리자 모드(임원/관리자)에서만 가능합니다.");
+      return;
+    }
+
+    const item = (this.gallery || []).find(g => g.id === id);
+    if (!item) {
+      this.showToast("⚠️ 수정할 갤러리 게시글을 찾을 수 없습니다.");
+      return;
+    }
+
+    const modal = document.getElementById("galleryModal");
+    if (!modal) return;
+
+    const editIdInput = document.getElementById("galleryEditId");
+    if (editIdInput) editIdInput.value = item.id;
+
+    const titleHeader = document.getElementById("galleryModalTitle");
+    if (titleHeader) titleHeader.textContent = `✏️ [${item.title}] 갤러리 세부내용 수정`;
+
+    const submitBtn = document.getElementById("gallerySubmitBtn");
+    if (submitBtn) submitBtn.textContent = "💾 수정 내용 저장 및 클라우드 동기화";
+
+    const titleInput = document.getElementById("galleryTitleInput");
+    if (titleInput) titleInput.value = item.title || "";
+
+    const catInput = document.getElementById("galleryCategoryInput");
+    if (catInput) catInput.value = item.category || "특강/세미나";
+
+    const dateInput = document.getElementById("galleryDateInput");
+    if (dateInput) dateInput.value = item.date || "";
+
+    const authorInput = document.getElementById("galleryAuthorInput");
+    if (authorInput) authorInput.value = item.author || "";
+
+    const contentInput = document.getElementById("galleryContentInput");
+    if (contentInput) contentInput.value = item.content || "";
+
+    // 기존 사진 배열 복원 (객체 형태로 정규화)
+    this.tempGalleryPhotos = (item.images || []).map(img => {
+      if (typeof img === "string") return { url: img, isInfographic: false };
+      return { url: img.url || "", isInfographic: !!img.isInfographic };
+    }).filter(img => !!img.url);
+
+    this.renderGalleryPhotoPreviews();
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.zIndex = "9999";
+  },
+
+  closeGalleryModal() {
+    const modal = document.getElementById("galleryModal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    }
+    const form = document.getElementById("addGalleryForm");
+    if (form) form.reset();
+    const editIdInput = document.getElementById("galleryEditId");
+    if (editIdInput) editIdInput.value = "";
+    this.tempGalleryPhotos = [];
+  },
+
+  /* 💡 사진 선택 및 Canvas 경량화 압축 (.jpg 800px 포맷) */
+  async handleGalleryPhotoSelect(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const remainingSlots = 4 - this.tempGalleryPhotos.length;
+    if (remainingSlots <= 0) {
+      this.showToast("⚠️ 사진은 최대 4장까지만 첨부할 수 있습니다.");
+      return;
+    }
+
+    const filesToProcess = Array.from(files).slice(0, remainingSlots);
+    if (files.length > remainingSlots) {
+      this.showToast(`⚠️ 최대 4장 제한으로 인해 ${remainingSlots}장의 사진만 추가됩니다.`);
+    }
+
+    for (const file of filesToProcess) {
+      if (!file.type.startsWith("image/")) continue;
+      
+      const compressedBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const maxDim = 800; // 갤러리용 선명도 유지하며 800px 축소
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // .jpg 포맷 0.78 quality 압축 (약 40~60KB로 최적화)
+            resolve(canvas.toDataURL("image/jpeg", 0.78));
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      this.tempGalleryPhotos.push({
+        url: compressedBase64,
+        isInfographic: false
+      });
+    }
+
+    this.renderGalleryPhotoPreviews();
+    e.target.value = "";
+  },
+
+  /* 💡 사진별 인포그래픽 여부 체크박스 토글 */
+  togglePhotoInfographic(index, isChecked) {
+    if (this.tempGalleryPhotos[index]) {
+      this.tempGalleryPhotos[index].isInfographic = isChecked;
+    }
+  },
+
+  removeGalleryPhoto(index) {
+    this.tempGalleryPhotos.splice(index, 1);
+    this.renderGalleryPhotoPreviews();
+  },
+
+  renderGalleryPhotoPreviews() {
+    const grid = document.getElementById("galleryPhotoPreviewGrid");
+    if (!grid) return;
+
+    if (this.tempGalleryPhotos.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: span 4; text-align: center; color: var(--color-mute); font-size: 12.5px; padding: 16px 0;">
+          선택된 사진이 없습니다. (최대 4장까지 첨부 가능)
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = this.tempGalleryPhotos.map((photo, idx) => `
+      <div style="background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1 / 1; background: #000;">
+          <img src="${photo.url}" alt="미리보기 ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" />
+          <button type="button" onclick="App.removeGalleryPhoto(${idx})"
+                  style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                  title="사진 삭제">&times;</button>
+        </div>
+        <label style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; cursor: pointer; color: var(--color-ink); font-weight: 700; user-select: none; padding: 2px 0;">
+          <input type="checkbox" ${photo.isInfographic ? 'checked' : ''} 
+                 onchange="App.togglePhotoInfographic(${idx}, this.checked)" 
+                 style="cursor: pointer; width: 14px; height: 14px;" />
+          📊 인포그래픽
+        </label>
+      </div>
+    `).join("");
+  },
+
+  /* 💡 갤러리 등록 및 수정 저장 */
+  async saveGalleryEntry(e) {
+    if (e) e.preventDefault();
+
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 등록 및 수정 권한이 없습니다 (관리자/임원 전용).");
+      return;
+    }
+
+    const editIdInput = document.getElementById("galleryEditId");
+    const editId = editIdInput ? editIdInput.value.trim() : "";
+
+    const title = document.getElementById("galleryTitleInput").value.trim();
+    const category = document.getElementById("galleryCategoryInput").value;
+    const date = document.getElementById("galleryDateInput").value;
+    const authorInput = document.getElementById("galleryAuthorInput").value.trim();
+    const content = document.getElementById("galleryContentInput").value.trim();
+
+    if (!title || !date || !content) {
+      this.showToast("⚠️ 행사명, 일자 및 본문 내용을 모두 입력해주세요.");
+      return;
+    }
+
+    let defaultAuthor = "13기 집행부";
+    if (this.currentUserId) {
+      const me = this.members.find(m => m.id === this.currentUserId || (m.googleUid && m.googleUid === this.currentUserId));
+      if (me) defaultAuthor = `${me.name} (${me.company || '13기'})`;
+    }
+
+    if (editId) {
+      // 💡 1. 기존 게시글 수정 (Update)
+      const existingIndex = this.gallery.findIndex(g => g.id === editId);
+      if (existingIndex === -1) {
+        this.showToast("⚠️ 수정하려는 게시글을 찾을 수 없습니다.");
+        return;
+      }
+
+      const updatedEntry = {
+        ...this.gallery[existingIndex],
+        title,
+        category,
+        date,
+        author: authorInput || defaultAuthor,
+        content,
+        images: [...this.tempGalleryPhotos],
+        updatedAt: new Date().toISOString()
+      };
+
+      this.gallery[existingIndex] = updatedEntry;
+      StorageService.saveGallery(this.gallery);
+
+      if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+        try {
+          await window.FS.setDoc(window.FS.doc(window.db, "gallery", editId), updatedEntry, { merge: true });
+        } catch (err) {
+          console.warn("Firestore gallery 수정 동기화 경고:", err);
+        }
+      }
+
+      this.activeGalleryId = editId;
+      this.closeGalleryModal();
+      this.showToast("🎉 갤러리 세부 내용이 성공적으로 수정 및 동기화되었습니다!");
+      this.renderGallery();
+    } else {
+      // 💡 2. 신규 게시글 등록 (Create)
+      const newEntry = {
+        id: `gal-${Date.now()}`,
+        title,
+        category,
+        date,
+        author: authorInput || defaultAuthor,
+        content,
+        images: [...this.tempGalleryPhotos],
+        createdAt: new Date().toISOString()
+      };
+
+      this.gallery.unshift(newEntry);
+      StorageService.saveGallery(this.gallery);
+
+      // Firestore gallery 컬렉션 동기화
+      if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+        try {
+          await window.FS.setDoc(window.FS.doc(window.db, "gallery", newEntry.id), newEntry);
+        } catch (err) {
+          console.warn("Firestore gallery 등록 동기화 경고:", err);
+        }
+      }
+
+      this.activeGalleryId = newEntry.id; // 새로 등록된 글 자동 펼침
+      this.closeGalleryModal();
+      this.showToast("🎉 행사 갤러리 및 사진이 성공적으로 등록 및 동기화되었습니다!");
+      this.renderGallery();
+    }
+  },
+
+  async deleteGalleryItem(id) {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 갤러리 삭제 권한이 없습니다 (관리자/임원 전용).");
+      return;
+    }
+
+    if (!confirm("해당 갤러리 게시글을 정말 삭제하시겠습니까?")) return;
+
+    this.gallery = this.gallery.filter(g => g.id !== id);
+    StorageService.saveGallery(this.gallery);
+
+    if (this.activeGalleryId === id) {
+      this.activeGalleryId = null;
+    }
+
+    if (window.db && window.FS && window.FS.deleteDoc && window.FS.doc) {
+      try {
+        await window.FS.deleteDoc(window.FS.doc(window.db, "gallery", id));
+      } catch (err) {
+        console.warn("Firestore gallery 삭제 경고:", err);
+      }
+    }
+
+    this.showToast("🗑️ 갤러리 게시글이 삭제되었습니다.");
+    this.renderGallery();
   },
 
   copyAccountToClipboard() {

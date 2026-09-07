@@ -227,8 +227,32 @@ const INITIAL_EVENTS = [];
 
 const INITIAL_LEDGER = [];
 
+const INITIAL_GALLERY = [];
+
 /* Storage Helper */
 class StorageService {
+  static getGallery() {
+    const data = localStorage.getItem("enterprise_13th_gallery");
+    if (!data) {
+      localStorage.setItem("enterprise_13th_gallery", JSON.stringify([]));
+      return [];
+    }
+    try {
+      const parsed = JSON.parse(data);
+      // 이전 샘플 더미(gal-1301, gal-1302) 자동 제거
+      const cleaned = parsed.filter(g => g && g.id !== "gal-1301" && g.id !== "gal-1302");
+      if (cleaned.length !== parsed.length) {
+        localStorage.setItem("enterprise_13th_gallery", JSON.stringify(cleaned));
+      }
+      return cleaned;
+    } catch (e) {
+      return [];
+    }
+  }
+
+  static saveGallery(gallery) {
+    localStorage.setItem("enterprise_13th_gallery", JSON.stringify(gallery));
+  }
   static getMembers() {
     const data = localStorage.getItem("enterprise_13th_members");
     if (!data) {
