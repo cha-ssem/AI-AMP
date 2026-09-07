@@ -1608,15 +1608,15 @@ const App = {
     const company = document.getElementById("regCompany").value.trim();
     const position = document.getElementById("regPosition") ? document.getElementById("regPosition").value.trim() : "";
     const industry = document.getElementById("regIndustry").value;
-    const phone = document.getElementById("regPhone").value.trim();
-    const kakaoId = document.getElementById("regKakao").value.trim();
+    const phone = document.getElementById("regPhone") ? document.getElementById("regPhone").value.trim() : "";
+    const kakaoId = document.getElementById("regKakao") ? document.getElementById("regKakao").value.trim() : "";
     const locationEl = document.getElementById("regLocation");
     const summaryEl = document.getElementById("regSummary");
     const location = locationEl ? locationEl.value.trim() : "";
     const summary = summaryEl ? summaryEl.value.trim() : "";
 
-    if (!username || !password || !name || !company || !phone || !kakaoId) {
-      this.showToast("⚠️ 필수 정보(희망 아이디, 비밀번호, 성명, 회사명, 연락처, 단톡방 프로필 명)를 모두 입력해 주세요.");
+    if (!username || !password || !name || !company) {
+      this.showToast("⚠️ 필수 정보(희망 아이디, 비밀번호, 성명, 회사명)를 모두 입력해 주세요.");
       return;
     }
 
