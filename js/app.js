@@ -3471,7 +3471,7 @@ const App = {
           ${initBalance.toLocaleString()}원
         </td>
         <td style="color: #cbd5e1; font-size: 12px; text-align: center; white-space: nowrap;">-</td>
-        <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; word-break: break-word;">
+        <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default;" title="${this.escapeHtml(this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고')}">
           ${this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고'}
         </td>
         <td style="white-space: nowrap; text-align: center;">
@@ -3567,7 +3567,7 @@ const App = {
               </button>
             ` : '<span style="color: #cbd5e1; font-size: 12px;">-</span>'}
           </td>
-          <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; word-break: break-word; line-height: 1.35;">${this.escapeHtml(item.note || '-')}</td>
+          <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; cursor: default;" title="${this.escapeHtml(item.note || '-')}">${this.escapeHtml(item.note || '-')}</td>
           <td style="white-space: nowrap; text-align: center;">
             ${canManageLedger ? `
               <div style="display: flex; gap: 4px; align-items: center; justify-content: center;">
