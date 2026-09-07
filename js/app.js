@@ -2086,6 +2086,11 @@ const App = {
       `;
     }).join("");
 
+    const mergeBtn = document.getElementById("mergeAccountBtn");
+    if (mergeBtn) {
+      mergeBtn.style.display = isAdmin ? "inline-flex" : "none";
+    }
+
     this.handleMemberSelectChange();
     this.renderLedger();
     if (typeof this.fetchCloudLedger === "function") {
@@ -2104,7 +2109,7 @@ const App = {
     }
 
     const features = typeof PERMISSION_FEATURES !== "undefined" ? PERMISSION_FEATURES : [
-      { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람" },
+      { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람 (등급 변경·계정 통합은 관리자 전용)" },
       { key: "curriculum_download", name: "📁 강의 교안(PDF) 다운로드", desc: "Curriculum 메뉴에서 강의 교안 파일 다운로드 버튼 활성화" },
       { key: "curriculum_manage", name: "📅 강의 & 행사 일정 관리", desc: "강의 커리큘럼 및 네트워킹 행사 등록·수정·삭제 및 카톡공유" },
       { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
@@ -2586,6 +2591,11 @@ const App = {
   },
 
   openMergeAccountModal(primaryId, secondaryId) {
+    if (this.currentRole !== "admin") {
+      this.showToast("🔒 중복 계정 감지 및 통합은 최고 관리자(admin)만 접근할 수 있습니다.");
+      return;
+    }
+
     const modal = document.getElementById("mergeAccountModal");
     const container = document.getElementById("mergeAccountModalBody");
     if (!modal || !container) return;
@@ -2746,6 +2756,11 @@ const App = {
   },
 
   async executeMergeAccounts(primaryId, secondaryId) {
+    if (this.currentRole !== "admin") {
+      this.showToast("🔒 계정 통합 및 삭제 처리는 최고 관리자(admin) 전용입니다.");
+      return;
+    }
+
     const primaryIndex = this.members.findIndex(m => m.id === primaryId);
     const secondaryIndex = this.members.findIndex(m => m.id === secondaryId);
 

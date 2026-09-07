@@ -472,7 +472,7 @@ const DEFAULT_PERMISSIONS = {
 
 /* 💡 권한 제어 매트릭스 대시보드 표시용 기능 메타데이터 */
 const PERMISSION_FEATURES = [
-  { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람" },
+  { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람 (등급 변경·계정 통합은 관리자 전용)" },
   { key: "curriculum_download", name: "📁 강의 교안(PDF) 다운로드", desc: "Curriculum 메뉴에서 강의 교안 파일 다운로드 버튼 활성화" },
   { key: "curriculum_manage", name: "📅 강의 & 행사 일정 관리", desc: "강의 커리큘럼 및 네트워킹 행사 등록·수정·삭제 및 카톡공유" },
   { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
