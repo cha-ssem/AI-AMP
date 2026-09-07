@@ -3342,17 +3342,27 @@ const App = {
     this.renderLedger();
   },
 
-  /* 이미지(약도/영수증) 팝업 모달 관련 */
-  openReceiptZoomModal(url, title) {
+  /* 이미지(약도/영수증/갤러리 사진) 팝업 모달 관련 */
+  openReceiptZoomModal(url, title, fallbackUrl) {
     const modal = document.getElementById("receiptZoomModal");
     const img = document.getElementById("receiptZoomImage");
     const titleEl = document.getElementById("receiptZoomTitle");
     if (!modal || !img) return;
 
+    // 만약 지정된 로컬 파일(images/...)이 없을 경우 업로드된 원본 Base64로 자동 Fallback
+    img.onerror = () => {
+      if (fallbackUrl && img.src !== fallbackUrl) {
+        console.log("💡 로컬 고화질 파일 미발견 -> 업로드 원본으로 안전 전환:", fallbackUrl);
+        img.src = fallbackUrl;
+      }
+    };
+
     img.src = url;
     if (titleEl) {
       if (title && (title.includes("약도") || title.includes("위치") || title.includes("오시는 길"))) {
         titleEl.textContent = `📍 ${title}`;
+      } else if (title && (title.includes("인포그래픽") || title.includes("현장사진") || title.includes("사진") || title.includes("갤러리"))) {
+        titleEl.textContent = `📸 ${title}`;
       } else {
         titleEl.textContent = `🧾 ${title || '상세'} 영수증`;
       }
@@ -3485,9 +3495,15 @@ const App = {
         badgeBg = "#cffafe";
       }
 
-      // 1주차 강의 갤러리 여부 판단 (WEEK 1 / 1주차 / 혁신 리더십 등)
-      const isWeek1 = (item.title && (item.title.includes("1주차") || item.title.includes("WEEK 1") || item.title.includes("1차") || item.title.includes("혁신 리더십") || item.title.includes("지속 성장"))) ||
-                      (item.content && (item.content.includes("1주차") || item.content.includes("WEEK 1") || item.content.includes("1week")));
+      // 💡 주차 번호 자동 파싱 (예: "1주차", "WEEK 2", "2주차", "WEEK 10" 등 모든 주차 지원)
+      let parsedWeekNum = null;
+      const fullSearchText = `${item.title || ""} ${item.content || ""}`;
+      const weekMatch = fullSearchText.match(/(?:WEEK|Week|week)\s*(\d+)|(\d+)\s*주차|(\d+)\s*week/i);
+      if (weekMatch) {
+        parsedWeekNum = parseInt(weekMatch[1] || weekMatch[2] || weekMatch[3], 10);
+      } else if (item.title && (item.title.includes("혁신 리더십") || item.title.includes("지속 성장"))) {
+        parsedWeekNum = 1;
+      }
 
       // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 표시)
       let infographicHtml = "";
@@ -3502,11 +3518,12 @@ const App = {
             </div>
             <div style="display: grid; grid-template-columns: ${infographics.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))'}; gap: 12px;">
               ${infographics.map((imgObj, idx) => {
-                const targetZoomUrl = (isWeek1 && idx === 0) ? "images/1week_lecture_summary.png" : imgObj.url;
-                const displayThumbnail = (isWeek1 && idx === 0 && (!imgObj.url || imgObj.url === "")) ? "images/1week_lecture_summary.png" : imgObj.url;
+                // 주차별 인포그래픽 명명 규칙: images/{N}week_lecture_summary.png
+                const targetZoomUrl = (parsedWeekNum && idx === 0) ? `images/${parsedWeekNum}week_lecture_summary.png` : imgObj.url;
+                const displayThumbnail = imgObj.url || (parsedWeekNum ? `images/${parsedWeekNum}week_lecture_summary.png` : "");
                 return `
                   <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); background: #1e1e2e; cursor: zoom-in; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
-                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetZoomUrl)}', '${this.escapeHtml(item.title)} - 1주차 강의 요약 인포그래픽')">
+                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetZoomUrl)}', '${this.escapeHtml(item.title)} - ${parsedWeekNum ? parsedWeekNum + '주차 ' : ''}강의 요약 인포그래픽', '${this.escapeHtml(imgObj.url)}')">
                     <img src="${this.escapeHtml(displayThumbnail)}" alt="${this.escapeHtml(item.title)} 인포그래픽" 
                          style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
                          onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
@@ -3535,14 +3552,12 @@ const App = {
             </div>
             <div style="display: grid; grid-template-columns: ${gridCols}; gap: 12px;">
               ${normalPhotos.map((imgObj, idx) => {
-                let targetNormalZoomUrl = imgObj.url;
-                if (isWeek1) {
-                  if (idx === 0) targetNormalZoomUrl = "images/1week_pic01.jpg";
-                  else if (idx === 1) targetNormalZoomUrl = "images/1week_pic02.jpg";
-                }
+                // 주차별 현장 사진 명명 규칙: images/{N}week_pic01.jpg, images/{N}week_pic02.jpg, ...
+                const picNumStr = String(idx + 1).padStart(2, "0");
+                const targetNormalZoomUrl = parsedWeekNum ? `images/${parsedWeekNum}week_pic${picNumStr}.jpg` : imgObj.url;
                 return `
                   <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); aspect-ratio: 4 / 3; background: #000; cursor: zoom-in;"
-                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetNormalZoomUrl)}', '${this.escapeHtml(item.title)} - 현장사진 ${idx + 1}')">
+                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetNormalZoomUrl)}', '${this.escapeHtml(item.title)} - 현장사진 ${idx + 1}', '${this.escapeHtml(imgObj.url)}')">
                     <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)}" 
                          style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; display: block;"
                          onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
