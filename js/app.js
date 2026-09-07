@@ -21,6 +21,7 @@ const App = {
   currentGalleryCategory: "all",
   activeGalleryId: null,
   tempGalleryPhotos: [],
+  tempGalleryInfographics: [],
   SESSION_TIMEOUT_MS: 30 * 60 * 1000, // 30분 세션 유효시간
   _lastActiveUpdate: 0,
   _sessionInterval: null,
@@ -4288,7 +4289,9 @@ const App = {
     }
 
     this.tempGalleryPhotos = [];
+    this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
+    this.renderGalleryInfographicPreviews();
 
     modal.classList.add("active");
     modal.style.display = "flex";
@@ -4359,7 +4362,9 @@ ${l.description || '강의의 핵심 인사이트와 현장에서 나눈 생생�
     }
 
     this.tempGalleryPhotos = [];
+    this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
+    this.renderGalleryInfographicPreviews();
 
     modal.classList.add("active");
     modal.style.display = "flex";
@@ -4425,7 +4430,9 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     }
 
     this.tempGalleryPhotos = [];
+    this.tempGalleryInfographics = [];
     this.renderGalleryPhotoPreviews();
+    this.renderGalleryInfographicPreviews();
 
     modal.classList.add("active");
     modal.style.display = "flex";
@@ -4472,13 +4479,17 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     const contentInput = document.getElementById("galleryContentInput");
     if (contentInput) contentInput.value = item.content || "";
 
-    // 기존 사진 배열 복원 (객체 형태로 정규화)
-    this.tempGalleryPhotos = (item.images || []).map(img => {
+    // 기존 사진 배열 복원 (일반 사진과 인포그래픽 분리 로드)
+    const allImages = (item.images || []).map(img => {
       if (typeof img === "string") return { url: img, isInfographic: false };
       return { url: img.url || "", isInfographic: !!img.isInfographic };
     }).filter(img => !!img.url);
 
+    this.tempGalleryPhotos = allImages.filter(img => !img.isInfographic);
+    this.tempGalleryInfographics = allImages.filter(img => img.isInfographic);
+
     this.renderGalleryPhotoPreviews();
+    this.renderGalleryInfographicPreviews();
 
     modal.classList.add("active");
     modal.style.display = "flex";
@@ -4496,16 +4507,20 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     const editIdInput = document.getElementById("galleryEditId");
     if (editIdInput) editIdInput.value = "";
     this.tempGalleryPhotos = [];
+    this.tempGalleryInfographics = [];
+    this.renderGalleryPhotoPreviews();
+    this.renderGalleryInfographicPreviews();
   },
 
-  /* 💡 사진 선택 및 Canvas 경량화 압축 (.jpg 800px 포맷) */
+  /* 💡 1. 일반 현장 사진 선택 및 경량화 압축 (.jpg 800px 포맷, 최대 4장) */
   async handleGalleryPhotoSelect(e) {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
     const remainingSlots = 4 - this.tempGalleryPhotos.length;
     if (remainingSlots <= 0) {
-      this.showToast("⚠️ 사진은 최대 4장까지만 첨부할 수 있습니다.");
+      this.showToast("⚠️ 일반 현장 사진은 최대 4장까지만 첨부할 수 있습니다.");
+      e.target.value = "";
       return;
     }
 
@@ -4524,7 +4539,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
           img.onload = () => {
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d");
-            const maxDim = 800; // 갤러리용 선명도 유지하며 800px 축소
+            const maxDim = 800; // 갤러리 일반 사진 선명도 유지하며 800px 축소
             let width = img.width;
             let height = img.height;
 
@@ -4562,16 +4577,67 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
     e.target.value = "";
   },
 
-  /* 💡 사진별 인포그래픽 여부 체크박스 토글 */
-  togglePhotoInfographic(index, isChecked) {
-    if (this.tempGalleryPhotos[index]) {
-      this.tempGalleryPhotos[index].isInfographic = isChecked;
+  /* 💡 2. 강의 내용 인포그래픽 / 요약자료 선택 (고화질 최대 1600px, 0.85 quality) */
+  async handleGalleryInfographicSelect(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    for (const file of Array.from(files)) {
+      if (!file.type.startsWith("image/")) continue;
+
+      const compressedBase64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d");
+            const maxDim = 1600; // 도표 및 글자 가독성을 위해 1600px 고화질 유지
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height) {
+              if (width > maxDim) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+              }
+            } else {
+              if (height > maxDim) {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+              }
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+
+            // 도표 선명도를 위해 0.85 quality 적용
+            resolve(canvas.toDataURL("image/jpeg", 0.85));
+          };
+          img.src = evt.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+
+      this.tempGalleryInfographics.push({
+        url: compressedBase64,
+        isInfographic: true
+      });
     }
+
+    this.renderGalleryInfographicPreviews();
+    e.target.value = "";
   },
 
   removeGalleryPhoto(index) {
     this.tempGalleryPhotos.splice(index, 1);
     this.renderGalleryPhotoPreviews();
+  },
+
+  removeGalleryInfographic(index) {
+    this.tempGalleryInfographics.splice(index, 1);
+    this.renderGalleryInfographicPreviews();
   },
 
   renderGalleryPhotoPreviews() {
@@ -4580,27 +4646,52 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
 
     if (this.tempGalleryPhotos.length === 0) {
       grid.innerHTML = `
-        <div style="grid-column: span 4; text-align: center; color: var(--color-mute); font-size: 12.5px; padding: 16px 0;">
-          선택된 사진이 없습니다. (최대 4장까지 첨부 가능)
+        <div style="grid-column: span 4; text-align: center; color: var(--color-mute); font-size: 12.5px; padding: 12px 0;">
+          선택된 현장 사진이 없습니다. (최대 4장까지 첨부 가능)
         </div>
       `;
       return;
     }
 
     grid.innerHTML = this.tempGalleryPhotos.map((photo, idx) => `
-      <div style="background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="background: var(--color-surface); border: 1px solid var(--color-hairline); border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px;">
         <div style="position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 1 / 1; background: #000;">
-          <img src="${photo.url}" alt="미리보기 ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" />
+          <img src="${photo.url}" alt="현장사진 ${idx + 1}" style="width: 100%; height: 100%; object-fit: cover;" />
           <button type="button" onclick="App.removeGalleryPhoto(${idx})"
                   style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
                   title="사진 삭제">&times;</button>
         </div>
-        <label style="display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 11px; cursor: pointer; color: var(--color-ink); font-weight: 700; user-select: none; padding: 2px 0;">
-          <input type="checkbox" ${photo.isInfographic ? 'checked' : ''} 
-                 onchange="App.togglePhotoInfographic(${idx}, this.checked)" 
-                 style="cursor: pointer; width: 14px; height: 14px;" />
-          📊 인포그래픽
-        </label>
+        <div style="font-size: 11px; text-align: center; color: var(--color-mute); font-weight: 600;">
+          📷 사진 ${idx + 1}
+        </div>
+      </div>
+    `).join("");
+  },
+
+  renderGalleryInfographicPreviews() {
+    const grid = document.getElementById("galleryInfographicPreviewGrid");
+    if (!grid) return;
+
+    if (this.tempGalleryInfographics.length === 0) {
+      grid.innerHTML = `
+        <div style="grid-column: span 4; text-align: center; color: var(--color-mute); font-size: 12.5px; padding: 12px 0;">
+          추가된 인포그래픽/강의 요약 이미지가 없습니다. (선택 사항)
+        </div>
+      `;
+      return;
+    }
+
+    grid.innerHTML = this.tempGalleryInfographics.map((photo, idx) => `
+      <div style="background: var(--color-surface); border: 1.5px solid #6366f1; border-radius: 8px; padding: 6px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 2px 8px rgba(99,102,241,0.15);">
+        <div style="position: relative; border-radius: 6px; overflow: hidden; aspect-ratio: 16 / 9; background: #1e1e2e;">
+          <img src="${photo.url}" alt="인포그래픽 ${idx + 1}" style="width: 100%; height: 100%; object-fit: contain;" />
+          <button type="button" onclick="App.removeGalleryInfographic(${idx})"
+                  style="position: absolute; top: 4px; right: 4px; background: rgba(0,0,0,0.75); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center;"
+                  title="인포그래픽 삭제">&times;</button>
+        </div>
+        <div style="font-size: 11.5px; text-align: center; color: #4338ca; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 4px;">
+          📊 인포그래픽 ${idx + 1}
+        </div>
       </div>
     `).join("");
   },
@@ -4634,6 +4725,11 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
       if (me) defaultAuthor = `${me.name} (${me.company || '13기'})`;
     }
 
+    const combinedImages = [
+      ...this.tempGalleryPhotos,
+      ...this.tempGalleryInfographics
+    ];
+
     if (editId) {
       // 💡 1. 기존 게시글 수정 (Update)
       const existingIndex = this.gallery.findIndex(g => g.id === editId);
@@ -4649,7 +4745,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
         date,
         author: authorInput || defaultAuthor,
         content,
-        images: [...this.tempGalleryPhotos],
+        images: combinedImages,
         updatedAt: new Date().toISOString()
       };
 
@@ -4681,7 +4777,7 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
         date,
         author: authorInput || defaultAuthor,
         content,
-        images: [...this.tempGalleryPhotos],
+        images: combinedImages,
         createdAt: new Date().toISOString()
       };
 
