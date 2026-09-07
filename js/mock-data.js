@@ -458,7 +458,7 @@ const DEFAULT_PERMISSIONS = {
   gallery_view: { guest: false, regular: true, full: true, exec: true, admin: true },
   gallery_manage: { guest: false, regular: false, full: false, exec: true, admin: true },
   ledger_view: { guest: false, regular: false, full: false, exec: true, admin: true },
-  ledger_manage: { guest: false, regular: false, full: false, exec: true, admin: true }
+  ledger_manage: { guest: false, regular: false, full: false, exec: false, admin: true }
 };
 
 /* 💡 권한 제어 매트릭스 대시보드 표시용 기능 메타데이터 */
@@ -469,5 +469,5 @@ const PERMISSION_FEATURES = [
   { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
   { key: "gallery_manage", name: "✍️ 갤러리 게시글 등록·관리", desc: "새 행사 이야기 및 사진 등록, 세부내용 수정 및 삭제" },
   { key: "ledger_view", name: "💰 회계 장부 열람", desc: "Admin & Ledger 메뉴 접근 및 찬조/회식 장부 내역과 잔액 열람" },
-  { key: "ledger_manage", name: "⚙️ 회계 장부 및 이월잔고 관리", desc: "수입/지출 내역 등록·수정, 영수증 관리 및 초기 이월잔고 설정" }
+  { key: "ledger_manage", name: "⚙️ 회계 장부 수정·삭제 및 이월잔고 관리", desc: "기입된 장부 내역의 수정·삭제, 영수증 관리 및 초기 이월잔고 설정 (관리자 전용)" }
 ];

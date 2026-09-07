@@ -2105,7 +2105,7 @@ const App = {
       { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
       { key: "gallery_manage", name: "✍️ 갤러리 게시글 등록·관리", desc: "새 행사 이야기 및 사진 등록, 세부내용 수정 및 삭제" },
       { key: "ledger_view", name: "💰 회계 장부 열람", desc: "Admin & Ledger 메뉴 접근 및 찬조/회식 장부 내역과 잔액 열람" },
-      { key: "ledger_manage", name: "⚙️ 회계 장부 및 이월잔고 관리", desc: "수입/지출 내역 등록·수정, 영수증 관리 및 초기 이월잔고 설정" }
+      { key: "ledger_manage", name: "⚙️ 회계 장부 수정·삭제 및 이월잔고 관리", desc: "기입된 장부 내역의 수정·삭제, 영수증 관리 및 초기 이월잔고 설정 (관리자 전용)" }
     ];
 
     const roles = ["guest", "regular", "full", "exec", "admin"];
@@ -3077,6 +3077,18 @@ const App = {
       return;
     }
 
+    const canManageLedger = this.hasPermission("ledger_manage");
+
+    const initialBalanceBtn = document.getElementById("initialBalanceSetBtn");
+    if (initialBalanceBtn) {
+      initialBalanceBtn.style.display = canManageLedger ? "inline-flex" : "none";
+    }
+
+    const ledgerFormBox = document.getElementById("ledgerFormContainer");
+    if (ledgerFormBox) {
+      ledgerFormBox.style.display = canManageLedger ? "block" : "none";
+    }
+
     ledgerTable.innerHTML = filteredLedger.map(item => {
       const amt = Number(item.amount) || 0;
       const isIncome = item.type === "sponsorship" || item.type === "fee" || item.type === "interest";
@@ -3140,14 +3152,18 @@ const App = {
           </td>
           <td style="color: var(--color-mute); font-size: 12.5px;">${this.escapeHtml(item.note || '-')}</td>
           <td>
-            <div style="display: flex; gap: 4px; align-items: center;">
-              <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 11px; border-color: #3b82f6; color: #2563eb;" onclick="App.openEditLedgerModal('${this.escapeHtml(item.id)}')" title="장부 내역 수정">
-                ✏️
-              </button>
-              <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 11px; border-color: #ef4444; color: #ef4444;" onclick="App.deleteLedgerItem('${this.escapeHtml(item.id)}')" title="장부 내역 삭제">
-                🗑️
-              </button>
-            </div>
+            ${canManageLedger ? `
+              <div style="display: flex; gap: 4px; align-items: center;">
+                <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 11px; border-color: #3b82f6; color: #2563eb;" onclick="App.openEditLedgerModal('${this.escapeHtml(item.id)}')" title="장부 내역 수정">
+                  ✏️
+                </button>
+                <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 11px; border-color: #ef4444; color: #ef4444;" onclick="App.deleteLedgerItem('${this.escapeHtml(item.id)}')" title="장부 내역 삭제">
+                  🗑️
+                </button>
+              </div>
+            ` : `
+              <span style="font-size: 11px; color: var(--color-mute);">🔒 조회전용</span>
+            `}
           </td>
         </tr>
       `;
@@ -3156,6 +3172,11 @@ const App = {
 
   async addLedgerEntry(e) {
     if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 장부 등록 및 관리 권한은 관리자 전용입니다.");
+      return;
+    }
 
     const type = document.getElementById("ledgerType").value;
     const name = document.getElementById("ledgerName").value.trim();
@@ -3248,6 +3269,11 @@ const App = {
   },
 
   async deleteLedgerItem(id) {
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 장부 내역 삭제 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
+
     if (!confirm("해당 장부 항목을 정말 삭제하시겠습니까?")) return;
 
     const targetItem = this.ledger.find(item => item.id === id);
@@ -3305,8 +3331,8 @@ const App = {
 
   /* 장부 수정 모달 관련 */
   openEditLedgerModal(id) {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 장부 수정 권한이 필요합니다.");
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 장부 내역 수정 권한은 관리자(admin) 전용입니다.");
       return;
     }
 
@@ -3388,6 +3414,11 @@ const App = {
 
   async saveEditLedger(e) {
     if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 장부 내역 수정 권한이 없습니다.");
+      return;
+    }
 
     const id = document.getElementById("editLedgerId").value;
     const itemIndex = this.ledger.findIndex(l => l.id === id);
@@ -3501,6 +3532,12 @@ const App = {
   /* 이월 잔고 모달 관련 */
   openInitialBalanceModal(e) {
     if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 이월 잔고 설정 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
+
     const modal = document.getElementById("initialBalanceModal");
     if (!modal) {
       console.warn("initialBalanceModal 엘리먼트를 찾을 수 없습니다.");
@@ -3525,6 +3562,11 @@ const App = {
 
   async saveInitialBalance(e) {
     if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 이월 잔고 설정 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
 
     const val = parseInt(document.getElementById("initialBalanceInput").value, 10) || 0;
     const nowIso = new Date().toISOString();
@@ -3552,6 +3594,11 @@ const App = {
 
   async resetInitialBalanceToZero(e) {
     if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 이월 잔고 초기화 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
 
     if (!confirm("초기 이월 잔고를 0원으로 리셋하시겠습니까?")) return;
 

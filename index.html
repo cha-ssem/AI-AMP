@@ -692,7 +692,7 @@
       <div
         style="display: flex; justify-content: space-between; align-items: center; margin-top: 40px; margin-bottom: 16px; flex-wrap: wrap; gap: 12px;">
         <h3 style="font-size: 20px; margin: 0;">💰 네트워킹 찬조 & 회식·행사 지출 장부</h3>
-        <button type="button" class="btn btn-outline btn-sm"
+        <button id="initialBalanceSetBtn" type="button" class="btn btn-outline btn-sm"
           style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; cursor: pointer;"
           onclick="App.openInitialBalanceModal(event)">
           ⚙️ 이월/기본 잔고 설정
@@ -727,7 +727,7 @@
       </div>
 
       <!-- Ledger Form Card -->
-      <div class="product-card" style="margin-bottom: 32px;">
+      <div id="ledgerFormContainer" class="product-card" style="margin-bottom: 32px;">
         <span class="corner-square"></span>
         <h4 style="font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
           ➕ 수입 / 지출 / 찬조 / 이자 내역 등록
