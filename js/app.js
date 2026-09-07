@@ -2029,6 +2029,11 @@ const App = {
       }
     }
 
+    const totalCountEl = document.getElementById("adminTotalMembersCount");
+    if (totalCountEl) {
+      totalCountEl.textContent = (this.members || []).length;
+    }
+
     const tableBody = document.getElementById("adminMemberTableBody");
     if (!tableBody) return;
 
