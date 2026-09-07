@@ -2431,6 +2431,203 @@ const App = {
     }
   },
 
+  /* 💡 관리자 회원 직접 등록 및 회비 납부 모달 제어 */
+  openAdminAddMemberModal() {
+    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 회원 등록 및 관리 권한이 필요합니다.");
+      return;
+    }
+
+    const modal = document.getElementById("adminAddMemberModal");
+    if (!modal) return;
+
+    // 폼 초기화
+    const nameInput = document.getElementById("adminAddMemberName");
+    if (nameInput) nameInput.value = "";
+
+    const cohortSelect = document.getElementById("adminAddMemberCohort");
+    if (cohortSelect) cohortSelect.value = "13";
+
+    const feeDateInput = document.getElementById("adminAddMemberFeeDate");
+    const todayStr = new Date().toLocaleDateString("sv-SE");
+    if (feeDateInput) feeDateInput.value = todayStr;
+
+    const roleSelect = document.getElementById("adminAddMemberRole");
+    if (roleSelect) roleSelect.value = "full";
+
+    const feePaidCheck = document.getElementById("adminAddMemberFeePaid");
+    if (feePaidCheck) feePaidCheck.checked = true;
+
+    const ledgerSyncCheck = document.getElementById("adminAddMemberLedgerSync");
+    if (ledgerSyncCheck) ledgerSyncCheck.checked = true;
+
+    const feeAmountInput = document.getElementById("adminAddMemberFeeAmount");
+    if (feeAmountInput) feeAmountInput.value = "100000";
+
+    const feeBox = document.getElementById("adminAddMemberFeeBox");
+    if (feeBox) feeBox.style.display = "grid";
+
+    const companyInput = document.getElementById("adminAddMemberCompany");
+    if (companyInput) companyInput.value = "";
+
+    const posInput = document.getElementById("adminAddMemberPosition");
+    if (posInput) posInput.value = "";
+
+    const phoneInput = document.getElementById("adminAddMemberPhone");
+    if (phoneInput) phoneInput.value = "";
+
+    const indSelect = document.getElementById("adminAddMemberIndustry");
+    if (indSelect) indSelect.value = "기타 서비스업";
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+
+    setTimeout(() => {
+      if (nameInput) nameInput.focus();
+    }, 100);
+  },
+
+  closeAdminAddMemberModal() {
+    const modal = document.getElementById("adminAddMemberModal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    }
+  },
+
+  /* 💡 성명 입력 시 '이름(기수)' 스마트 파싱 (예: 홍길동(13기) -> 13기 자동 선택) */
+  handleAdminAddMemberNameInput(val) {
+    if (!val) return;
+    const match = val.match(/[\(\[]\s*(\d+)기?\s*[\)\]]/);
+    if (match && match[1]) {
+      const parsedCohort = match[1];
+      const cohortSelect = document.getElementById("adminAddMemberCohort");
+      if (cohortSelect) {
+        // 옵션 목록에 해당 기수가 있는지 확인하고 있으면 선택
+        const exists = Array.from(cohortSelect.options).some(opt => opt.value === parsedCohort);
+        if (exists) {
+          cohortSelect.value = parsedCohort;
+        }
+      }
+    }
+  },
+
+  /* 💡 관리자 회원 등록 및 회비 납부/장부 기록 제출 처리 */
+  async handleAdminAddMemberSubmit(e) {
+    if (e) e.preventDefault();
+
+    let rawName = document.getElementById("adminAddMemberName").value.trim();
+    const cohortEl = document.getElementById("adminAddMemberCohort");
+    let cohort = parseInt(cohortEl.value, 10) || 13;
+
+    // '홍길동(13기)' 또는 '홍길동(13)' 형식의 기수 분리 정제
+    const match = rawName.match(/^(.+?)\s*[\(\[]\s*(\d+)기?\s*[\)\]]$/);
+    if (match) {
+      rawName = match[1].trim();
+      cohort = parseInt(match[2], 10) || cohort;
+    }
+
+    if (!rawName) {
+      this.showToast("⚠️ 원우 성명을 입력해 주세요.");
+      return;
+    }
+
+    const feeDate = document.getElementById("adminAddMemberFeeDate").value || new Date().toLocaleDateString("sv-SE");
+    const role = document.getElementById("adminAddMemberRole").value || "full";
+    const feePaid = document.getElementById("adminAddMemberFeePaid").checked;
+    const ledgerSync = document.getElementById("adminAddMemberLedgerSync").checked;
+    const feeAmount = parseInt(document.getElementById("adminAddMemberFeeAmount").value, 10) || 100000;
+
+    const company = document.getElementById("adminAddMemberCompany") ? document.getElementById("adminAddMemberCompany").value.trim() : "";
+    const position = document.getElementById("adminAddMemberPosition") ? document.getElementById("adminAddMemberPosition").value.trim() : "";
+    const phone = document.getElementById("adminAddMemberPhone") ? document.getElementById("adminAddMemberPhone").value.trim() : "";
+    const industry = document.getElementById("adminAddMemberIndustry") ? document.getElementById("adminAddMemberIndustry").value : "기타 서비스업";
+
+    const now = Date.now();
+    const newMemberId = `mem-${now.toString().slice(-6)}`;
+    const autoUsername = `user_${now.toString().slice(-6)}`;
+
+    // 💡 입력한 날짜(feeDate)를 바탕으로 회원 가입일(joinDate), 회비납부일(feeDate), 등급(role)을 설정
+    const newMember = {
+      id: newMemberId,
+      username: autoUsername,
+      password: "direct_admin_registered_user",
+      name: rawName,
+      cohort: cohort,
+      role: role,
+      position: position || "",
+      company: company || "-",
+      industry: industry,
+      industryImg: this.getIndustryImage(industry),
+      location: "",
+      phone: phone,
+      kakaoId: rawName,
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+      summary: "관리자 직접 등록 회원",
+      feePaid: feePaid,
+      feeDate: feePaid ? feeDate : "",
+      joinDate: feeDate // 💡 입력한 날짜를 가입일로 설정
+    };
+
+    // 💡 회비 납부 및 장부 연동 처리
+    let feeLedgerEntry = null;
+    if (feePaid && ledgerSync) {
+      let processorName = "관리자";
+      if (this.currentUserId) {
+        const adminUser = this.members.find(u => u.id === this.currentUserId || (u.googleUid && u.googleUid === this.currentUserId));
+        if (adminUser && adminUser.name) {
+          processorName = `${adminUser.name}(${this.getRoleName(this.currentRole)})`;
+        }
+      }
+
+      feeLedgerEntry = {
+        id: `led-fee-${now}`,
+        date: feeDate, // 💡 입력한 날짜를 장부 일자로 설정
+        type: "fee",
+        category: "정회원 회비",
+        name: rawName,
+        item: `${rawName} 원우 정회원 회비 납부`,
+        amount: feeAmount,
+        location: "-",
+        attendees: "-",
+        note: `${processorName} 회원 직접 등록 및 회비 처리`,
+        receiptUrl: ""
+      };
+
+      this.ledger.unshift(feeLedgerEntry);
+      StorageService.saveLedger(this.ledger);
+
+      // Firestore ledger 컬렉션 기록
+      if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+        window.FS.setDoc(window.FS.doc(window.db, "ledger", feeLedgerEntry.id), feeLedgerEntry).catch(console.warn);
+      }
+    }
+
+    // 회원 목록 맨 앞에 추가
+    this.members.unshift(newMember);
+    StorageService.saveMembers(this.members);
+
+    // Firestore members 컬렉션 기록
+    if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+      try {
+        await window.FS.setDoc(window.FS.doc(window.db, "members", newMemberId), newMember, { merge: true });
+        console.log("Firebase Firestore에 관리자 등록 회원 저장 완료:", newMemberId);
+      } catch (err) {
+        console.warn("Firestore 회원 저장 시도 중 경고:", err);
+      }
+    }
+
+    this.closeAdminAddMemberModal();
+
+    // 화면 갱신
+    this.renderAdmin();
+    if (this.currentTab === "members") {
+      this.renderMemberDirectory();
+    }
+
+    this.showToast(`🎉 ${rawName}(${cohort}기) 원우님이 성공적으로 등록되었습니다! (${feeDate} 기준 ${this.getRoleName(role)}${feePaid ? ' / 회비 납부 완료' : ''})`);
+  },
+
   updateBulkTotalEstimate() {
     const amount = parseInt(document.getElementById("bulkFeePayAmount").value, 10) || 0;
     const count = (this.selectedBulkMemberIds && this.selectedBulkMemberIds.length) ? this.selectedBulkMemberIds.length : 0;
