@@ -3485,9 +3485,13 @@ const App = {
         badgeBg = "#cffafe";
       }
 
-      // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 상단 강조)
+      // 1. 강의 내용 인포그래픽 사진 렌더링 (체크된 사진은 배지와 함께 표시)
       let infographicHtml = "";
       if (infographics.length > 0) {
+        // 1주차 강의 갤러리 여부 판단 (WEEK 1 / 1주차 / 혁신 리더십 등)
+        const isWeek1 = (item.title && (item.title.includes("1주차") || item.title.includes("WEEK 1") || item.title.includes("1차") || item.title.includes("혁신 리더십") || item.title.includes("지속 성장"))) ||
+                        (item.content && (item.content.includes("1주차") || item.content.includes("WEEK 1") || item.content.includes("1week")));
+
         infographicHtml = `
           <div style="margin-top: 18px; padding: 16px; background: rgba(99, 102, 241, 0.05); border: 1.5px solid rgba(99, 102, 241, 0.35); border-radius: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
@@ -3497,14 +3501,18 @@ const App = {
               <span style="font-size: 11.5px; color: var(--color-mute);">🔍 클릭 시 원본 고화질 확대</span>
             </div>
             <div style="display: grid; grid-template-columns: ${infographics.length === 1 ? '1fr' : 'repeat(auto-fit, minmax(220px, 1fr))'}; gap: 12px;">
-              ${infographics.map((imgObj, idx) => `
-                <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); background: #1e1e2e; cursor: zoom-in; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
-                     onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(imgObj.url)}', '${this.escapeHtml(item.title)} - 인포그래픽 ${idx + 1}')">
-                  <img src="${this.escapeHtml(imgObj.url)}" alt="${this.escapeHtml(item.title)} 인포그래픽" 
-                       style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
-                       onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
-                </div>
-              `).join("")}
+              ${infographics.map((imgObj, idx) => {
+                const targetZoomUrl = (isWeek1 && idx === 0) ? "images/1week_lecture_summary.png" : imgObj.url;
+                const displayThumbnail = (isWeek1 && idx === 0 && (!imgObj.url || imgObj.url === "")) ? "images/1week_lecture_summary.png" : imgObj.url;
+                return `
+                  <div style="position: relative; overflow: hidden; border-radius: 8px; border: 1px solid var(--color-hairline); background: #1e1e2e; cursor: zoom-in; box-shadow: 0 4px 12px rgba(0,0,0,0.12);"
+                       onclick="event.stopPropagation(); App.openReceiptZoomModal('${this.escapeHtml(targetZoomUrl)}', '${this.escapeHtml(item.title)} - 1주차 강의 요약 인포그래픽')">
+                    <img src="${this.escapeHtml(displayThumbnail)}" alt="${this.escapeHtml(item.title)} 인포그래픽" 
+                         style="width: 100%; height: auto; max-height: 420px; object-fit: contain; display: block; margin: 0 auto; transition: transform 0.3s ease;"
+                         onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" />
+                  </div>
+                `;
+              }).join("")}
             </div>
           </div>
         `;
