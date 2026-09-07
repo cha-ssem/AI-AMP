@@ -3396,7 +3396,11 @@ const App = {
     const sortedChronological = [...validLedger].sort((a, b) => {
       const dateA = a.date || a.createdAt || "";
       const dateB = b.date || b.createdAt || "";
-      return dateA.localeCompare(dateB);
+      const dComp = dateA.localeCompare(dateB);
+      if (dComp !== 0) return dComp;
+      const idA = a.createdAt || a.id || "";
+      const idB = b.createdAt || b.id || "";
+      return String(idA).localeCompare(String(idB));
     });
 
     let currentRunningBalance = initBalance;
@@ -3411,11 +3415,17 @@ const App = {
       item._runningBalance = currentRunningBalance;
     });
 
-    // 💡 2. 화면 표시용 (최신순 내림차순 정렬 및 필터 적용)
+    // 💡 2. 화면 표시용 (회비 납부 및 거래 등록 처리 순서의 내림차순 정렬)
     const displayLedger = [...validLedger].sort((a, b) => {
+      // 1순위: 거래 일자 내림차순
       const dateA = a.date || a.createdAt || "";
       const dateB = b.date || b.createdAt || "";
-      return dateB.localeCompare(dateA);
+      const dComp = dateB.localeCompare(dateA);
+      if (dComp !== 0) return dComp;
+      // 2순위: 등록/처리 시점 내림차순 (가장 최근에 납부/등록 처리된 레코드가 맨 위로)
+      const idA = a.createdAt || a.id || "";
+      const idB = b.createdAt || b.id || "";
+      return String(idB).localeCompare(String(idA));
     });
 
     const filteredLedger = displayLedger.filter(item => {
@@ -3443,12 +3453,12 @@ const App = {
     const initialBalanceRowHtml = `
       <tr style="background: rgba(99, 102, 241, 0.05); font-weight: 600; border-top: 2px solid var(--color-hairline);">
         <td style="white-space: nowrap; color: #4338ca; font-weight: 700;">📅 ${this.escapeHtml(initialDateDisplay)}</td>
-        <td>
-          <span class="pill-tag-nvidia" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
+        <td style="white-space: nowrap;">
+          <span class="pill-tag-nvidia" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block;">
             🏛️ 기초 이월 잔고
           </span>
         </td>
-        <td>
+        <td style="white-space: nowrap;">
           <strong style="color: #4338ca;">13기 초기 이월금</strong>
         </td>
         <td>
@@ -3460,11 +3470,11 @@ const App = {
         <td style="font-weight: 800; color: #1e1e2e; white-space: nowrap; background: rgba(99, 102, 241, 0.08);">
           ${initBalance.toLocaleString()}원
         </td>
-        <td style="color: #cbd5e1; font-size: 12px; text-align: center;">-</td>
-        <td style="color: var(--color-mute); font-size: 12px;">
+        <td style="color: #cbd5e1; font-size: 12px; text-align: center; white-space: nowrap;">-</td>
+        <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; word-break: break-word;">
           ${this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고'}
         </td>
-        <td>
+        <td style="white-space: nowrap; text-align: center;">
           ${canManageLedger ? `
             <button class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 11px; border-color: #6366f1; color: #4f46e5; font-weight: 700; background: #fff;" onclick="App.openInitialBalanceModal()" title="초기 이월 잔고 금액 및 날짜 설정">
               ⚙️ 설정
@@ -3531,12 +3541,12 @@ const App = {
       return `
         <tr>
           <td style="white-space: nowrap;">${this.escapeHtml(dateDisplay)}</td>
-          <td>
-            <span class="pill-tag-nvidia" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; padding: 3px 8px; border-radius: 4px;">
+          <td style="white-space: nowrap;">
+            <span class="pill-tag-nvidia" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; padding: 3px 8px; border-radius: 4px; white-space: nowrap; display: inline-block;">
               ${badgeLabel}
             </span>
           </td>
-          <td>
+          <td style="white-space: nowrap;">
             <strong>${this.escapeHtml(item.name || '미지정')}</strong>
             ${item.location && item.location !== '-' ? `<br><span style="font-size: 11.5px; color: var(--color-mute);">📍 ${this.escapeHtml(item.location)}</span>` : ''}
           </td>
@@ -3550,17 +3560,17 @@ const App = {
           <td style="font-weight: 700; color: var(--color-ink); white-space: nowrap; background: rgba(0,0,0,0.015);">
             ${runningBal.toLocaleString()}원
           </td>
-          <td>
+          <td style="white-space: nowrap; text-align: center;">
             ${item.receiptUrl ? `
-              <button class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 11px;" onclick="App.openReceiptZoomModal('${this.escapeHtml(item.receiptUrl)}', '${this.escapeHtml(item.item || '')}')">
+              <button class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 11px; white-space: nowrap;" onclick="App.openReceiptZoomModal('${this.escapeHtml(item.receiptUrl)}', '${this.escapeHtml(item.item || '')}')">
                 🧾 영수증
               </button>
             ` : '<span style="color: #cbd5e1; font-size: 12px;">-</span>'}
           </td>
-          <td style="color: var(--color-mute); font-size: 12.5px;">${this.escapeHtml(item.note || '-')}</td>
-          <td>
+          <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; word-break: break-word; line-height: 1.35;">${this.escapeHtml(item.note || '-')}</td>
+          <td style="white-space: nowrap; text-align: center;">
             ${canManageLedger ? `
-              <div style="display: flex; gap: 4px; align-items: center;">
+              <div style="display: flex; gap: 4px; align-items: center; justify-content: center;">
                 <button class="btn btn-outline btn-sm" style="padding: 2px 6px; font-size: 11px; border-color: #3b82f6; color: #2563eb;" onclick="App.openEditLedgerModal('${this.escapeHtml(item.id)}')" title="장부 내역 수정">
                   ✏️
                 </button>
