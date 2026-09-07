@@ -568,6 +568,35 @@ h4 {
   border-bottom: 1px solid var(--color-hairline);
 }
 
+/* Ledger Table Compact & No Scrollbar */
+.ledger-table {
+  width: 100%;
+  table-layout: fixed;
+  min-width: 0;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ledger-table th,
+.ledger-table td {
+  padding: 9px 8px;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+.ledger-table th {
+  font-size: 12.5px;
+  background: var(--color-surface-soft);
+  color: var(--color-ink);
+  font-weight: 700;
+  border-bottom: 1px solid var(--color-hairline);
+  white-space: nowrap;
+}
+
+.ledger-table td {
+  border-bottom: 1px solid var(--color-hairline);
+}
+
 .ledger-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -3454,24 +3454,24 @@ const App = {
       <tr style="background: rgba(99, 102, 241, 0.05); font-weight: 600; border-top: 2px solid var(--color-hairline);">
         <td style="white-space: nowrap; color: #4338ca; font-weight: 700;">📅 ${this.escapeHtml(initialDateDisplay)}</td>
         <td style="white-space: nowrap;">
-          <span class="pill-tag-nvidia" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block;">
+          <span class="pill-tag-nvidia" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 2.5px 6px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block;">
             🏛️ 기초 이월 잔고
           </span>
         </td>
-        <td style="white-space: nowrap;">
+        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           <strong style="color: #4338ca;">13기 초기 이월금</strong>
         </td>
-        <td style="white-space: nowrap;">
+        <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
           <span style="color: var(--color-ink);">기초 잔고 설정액 (기수 이월)</span>
         </td>
-        <td style="font-weight: 700; color: #4f46e5; white-space: nowrap;">
+        <td style="font-weight: 700; color: #4f46e5; white-space: nowrap; text-align: right; padding-right: 12px;">
           +${initBalance.toLocaleString()}원
         </td>
-        <td style="font-weight: 800; color: #1e1e2e; white-space: nowrap; background: rgba(99, 102, 241, 0.08);">
+        <td style="font-weight: 800; color: #1e1e2e; white-space: nowrap; text-align: right; padding-right: 12px; background: rgba(99, 102, 241, 0.08);">
           ${initBalance.toLocaleString()}원
         </td>
         <td style="color: #cbd5e1; font-size: 12px; text-align: center; white-space: nowrap;">-</td>
-        <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default;" title="${this.escapeHtml(this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고')}">
+        <td style="color: var(--color-mute); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default;" title="${this.escapeHtml(this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고')}">
           ${this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고'}
         </td>
         <td style="white-space: nowrap; text-align: center;">
@@ -3542,22 +3542,22 @@ const App = {
         <tr>
           <td style="white-space: nowrap;">${this.escapeHtml(dateDisplay)}</td>
           <td style="white-space: nowrap;">
-            <span class="pill-tag-nvidia" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; padding: 3px 8px; border-radius: 4px; white-space: nowrap; display: inline-block;">
+            <span class="pill-tag-nvidia" style="background: ${badgeBg}; color: ${badgeColor}; font-size: 11px; padding: 2.5px 6px; border-radius: 4px; white-space: nowrap; display: inline-block;">
               ${badgeLabel}
             </span>
           </td>
-          <td style="white-space: nowrap;">
+          <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${this.escapeHtml(item.name || '')}">
             <strong>${this.escapeHtml(item.name || '미지정')}</strong>
-            ${item.location && item.location !== '-' ? `<br><span style="font-size: 11.5px; color: var(--color-mute);">📍 ${this.escapeHtml(item.location)}</span>` : ''}
+            ${item.location && item.location !== '-' ? `<br><span style="font-size: 11px; color: var(--color-mute);">📍 ${this.escapeHtml(item.location)}</span>` : ''}
           </td>
-          <td style="white-space: nowrap;">
+          <td style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${this.escapeHtml(item.item || '')}">
             ${this.escapeHtml(item.item || '내역 미기재')}
-            ${item.attendees && item.attendees !== '-' ? ` <span style="font-size: 11.5px; color: #4f46e5; font-weight: 700;">(👥 ${this.escapeHtml(item.attendees)})</span>` : ''}
+            ${item.attendees && item.attendees !== '-' ? ` <span style="font-size: 11px; color: #4f46e5; font-weight: 700;">(👥 ${this.escapeHtml(item.attendees)})</span>` : ''}
           </td>
-          <td style="font-weight: 700; color: ${isIncome ? '#16a34a' : '#dc2626'}; white-space: nowrap;">
+          <td style="font-weight: 700; color: ${isIncome ? '#16a34a' : '#dc2626'}; white-space: nowrap; text-align: right; padding-right: 12px;">
             ${isIncome ? '+' : '-'}${amt.toLocaleString()}원
           </td>
-          <td style="font-weight: 700; color: var(--color-ink); white-space: nowrap; background: rgba(0,0,0,0.015);">
+          <td style="font-weight: 700; color: var(--color-ink); white-space: nowrap; text-align: right; padding-right: 12px; background: rgba(0,0,0,0.015);">
             ${runningBal.toLocaleString()}원
           </td>
           <td style="white-space: nowrap; text-align: center;">
@@ -3567,7 +3567,7 @@ const App = {
               </button>
             ` : '<span style="color: #cbd5e1; font-size: 12px;">-</span>'}
           </td>
-          <td style="color: var(--color-mute); font-size: 12px; max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.35; cursor: default;" title="${this.escapeHtml(item.note || '-')}">${this.escapeHtml(item.note || '-')}</td>
+          <td style="color: var(--color-mute); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: default;" title="${this.escapeHtml(item.note || '-')}">${this.escapeHtml(item.note || '-')}</td>
           <td style="white-space: nowrap; text-align: center;">
             ${canManageLedger ? `
               <div style="display: flex; gap: 4px; align-items: center; justify-content: center;">
