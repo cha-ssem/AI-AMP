@@ -3336,7 +3336,7 @@ const App = {
     let totalIncome = 0;
     let totalExpense = 0;
 
-    // 💡 설정 문서나 빈 데이터 제외 후 유효한 장부 항목만 계산
+    // 💡 설정 문서나 빈 데이터 제외 후 유효한 장부 항목만 추출
     const validLedger = this.ledger.filter(item => {
       if (!item || item.id === "initial_balance" || item.isConfig === true) {
         return false;
@@ -3360,17 +3360,23 @@ const App = {
     const initialEl = document.getElementById("initialBalanceAmount");
     if (initialEl) initialEl.textContent = `${initBalance.toLocaleString()}원`;
     
+    // 💡 초기 이월 잔고 설정 일자 파싱
+    let initialDateDisplay = "2026-03-01";
+    const updatedDate = this.initialBalanceUpdatedAt;
+    if (updatedDate) {
+      if (typeof updatedDate === "object" && updatedDate && updatedDate.seconds) {
+        initialDateDisplay = new Date(updatedDate.seconds * 1000).toISOString().split("T")[0];
+      } else if (typeof updatedDate === "string" && updatedDate.includes("T")) {
+        initialDateDisplay = updatedDate.split("T")[0];
+      } else if (typeof updatedDate === "string" && updatedDate.length >= 10) {
+        initialDateDisplay = updatedDate.substring(0, 10);
+      }
+    }
+
     const initialDateEl = document.getElementById("initialBalanceDate");
     if (initialDateEl) {
-      const updatedDate = this.initialBalanceUpdatedAt;
-      if (updatedDate) {
-        let dateDisplay = updatedDate;
-        if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
-          dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
-        } else if (typeof dateDisplay === "string" && dateDisplay.includes("T")) {
-          dateDisplay = dateDisplay.split("T")[0];
-        }
-        initialDateEl.textContent = `📅 ${dateDisplay}`;
+      if (this.initialBalanceUpdatedAt) {
+        initialDateEl.textContent = `📅 ${initialDateDisplay}`;
         initialDateEl.style.display = "inline-flex";
       } else {
         initialDateEl.style.display = "none";
@@ -3386,8 +3392,33 @@ const App = {
     const balanceEl = document.getElementById("ledgerBalanceAmount");
     if (balanceEl) balanceEl.textContent = `${balance.toLocaleString()}원`;
 
-    // 필터링 및 검색어 적용
-    const filteredLedger = validLedger.filter(item => {
+    // 💡 1. 과거순(오름차순)으로 누적 잔액(Running Balance) 정확하게 계산
+    const sortedChronological = [...validLedger].sort((a, b) => {
+      const dateA = a.date || a.createdAt || "";
+      const dateB = b.date || b.createdAt || "";
+      return dateA.localeCompare(dateB);
+    });
+
+    let currentRunningBalance = initBalance;
+    sortedChronological.forEach(item => {
+      const amt = Number(item.amount) || 0;
+      const isIncome = item.type === "sponsorship" || item.type === "fee" || item.type === "interest";
+      if (isIncome) {
+        currentRunningBalance += amt;
+      } else {
+        currentRunningBalance -= amt;
+      }
+      item._runningBalance = currentRunningBalance;
+    });
+
+    // 💡 2. 화면 표시용 (최신순 내림차순 정렬 및 필터 적용)
+    const displayLedger = [...validLedger].sort((a, b) => {
+      const dateA = a.date || a.createdAt || "";
+      const dateB = b.date || b.createdAt || "";
+      return dateB.localeCompare(dateA);
+    });
+
+    const filteredLedger = displayLedger.filter(item => {
       if (filterType !== "all" && item.type !== filterType) return false;
       if (searchQuery) {
         const text = `${item.name || ''} ${item.item || ''} ${item.location || ''} ${item.note || ''} ${item.category || ''}`.toLowerCase();
@@ -3395,11 +3426,6 @@ const App = {
       }
       return true;
     });
-
-    if (filteredLedger.length === 0) {
-      ledgerTable.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 36px; color: var(--color-mute);">조건에 해당하는 장부 내역이 없습니다.</td></tr>`;
-      return;
-    }
 
     const canManageLedger = this.hasPermission("ledger_manage");
 
@@ -3413,7 +3439,59 @@ const App = {
       ledgerFormBox.style.display = canManageLedger ? "block" : "none";
     }
 
-    ledgerTable.innerHTML = filteredLedger.map(item => {
+    // 💡 3. 초기 이월 잔고 행 템플릿 (장부 맨 아래 표시)
+    const initialBalanceRowHtml = `
+      <tr style="background: rgba(99, 102, 241, 0.05); font-weight: 600; border-top: 2px solid var(--color-hairline);">
+        <td style="white-space: nowrap; color: #4338ca; font-weight: 700;">📅 ${this.escapeHtml(initialDateDisplay)}</td>
+        <td>
+          <span class="pill-tag-nvidia" style="background: #e0e7ff; color: #4338ca; font-size: 11px; padding: 3px 8px; border-radius: 4px; font-weight: 700;">
+            🏛️ 기초 이월 잔고
+          </span>
+        </td>
+        <td>
+          <strong style="color: #4338ca;">13기 초기 이월금</strong>
+        </td>
+        <td>
+          <span style="color: var(--color-ink);">기초 잔고 설정액 (기수 이월)</span>
+        </td>
+        <td style="font-weight: 700; color: #4f46e5; white-space: nowrap;">
+          +${initBalance.toLocaleString()}원
+        </td>
+        <td style="font-weight: 800; color: #1e1e2e; white-space: nowrap; background: rgba(99, 102, 241, 0.08);">
+          ${initBalance.toLocaleString()}원
+        </td>
+        <td style="color: #cbd5e1; font-size: 12px; text-align: center;">-</td>
+        <td style="color: var(--color-mute); font-size: 12px;">
+          ${this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : '기초 설정 잔고'}
+        </td>
+        <td>
+          ${canManageLedger ? `
+            <button class="btn btn-outline btn-sm" style="padding: 2px 8px; font-size: 11px; border-color: #6366f1; color: #4f46e5; font-weight: 700; background: #fff;" onclick="App.openInitialBalanceModal()" title="초기 이월 잔고 금액 및 날짜 설정">
+              ⚙️ 설정
+            </button>
+          ` : `
+            <span style="font-size: 11px; color: var(--color-mute);">-</span>
+          `}
+        </td>
+      </tr>
+    `;
+
+    if (filteredLedger.length === 0) {
+      if (searchQuery || filterType !== "all") {
+        ledgerTable.innerHTML = `
+          <tr><td colspan="9" style="text-align: center; padding: 36px; color: var(--color-mute);">조건에 해당하는 장부 내역이 없습니다.</td></tr>
+          ${initialBalanceRowHtml}
+        `;
+      } else {
+        ledgerTable.innerHTML = `
+          <tr><td colspan="9" style="text-align: center; padding: 36px; color: var(--color-mute);">등록된 거래 내역이 없습니다.</td></tr>
+          ${initialBalanceRowHtml}
+        `;
+      }
+      return;
+    }
+
+    const rowsHtml = filteredLedger.map(item => {
       const amt = Number(item.amount) || 0;
       const isIncome = item.type === "sponsorship" || item.type === "fee" || item.type === "interest";
       let badgeLabel = "🟢 찬조금";
@@ -3448,6 +3526,8 @@ const App = {
         dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
       }
 
+      const runningBal = (item._runningBalance !== undefined) ? item._runningBalance : 0;
+
       return `
         <tr>
           <td style="white-space: nowrap;">${this.escapeHtml(dateDisplay)}</td>
@@ -3466,6 +3546,9 @@ const App = {
           </td>
           <td style="font-weight: 700; color: ${isIncome ? '#16a34a' : '#dc2626'}; white-space: nowrap;">
             ${isIncome ? '+' : '-'}${amt.toLocaleString()}원
+          </td>
+          <td style="font-weight: 700; color: var(--color-ink); white-space: nowrap; background: rgba(0,0,0,0.015);">
+            ${runningBal.toLocaleString()}원
           </td>
           <td>
             ${item.receiptUrl ? `
@@ -3492,6 +3575,8 @@ const App = {
         </tr>
       `;
     }).join("");
+
+    ledgerTable.innerHTML = rowsHtml + initialBalanceRowHtml;
   },
 
   async addLedgerEntry(e) {
