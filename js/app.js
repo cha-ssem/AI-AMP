@@ -4127,15 +4127,10 @@ const App = {
         const fullWatchUrl = youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : (targetYtUrl || this.DEFAULT_GALLERY_YOUTUBE_URL);
         youtubeCardHtml = `
           <div style="padding: 16px; background: rgba(239, 68, 68, 0.04); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
+            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 2px;">
               <span style="background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);">
-                🎬 강의 관련 영상 (동의대 AI그랜드ICT센터)
+                🎬 강의 관련 영상 (동의대학교 인공지능 그랜드 ICT연구센터)
               </span>
-              <a href="${this.escapeHtml(fullWatchUrl)}" target="_blank" rel="noopener noreferrer" 
-                 style="font-size: 12px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; padding: 3px 10px; border-radius: 4px; border: 1px solid #fca5a5; transition: background 0.2s;"
-                 onclick="event.stopPropagation()">
-                ▶️ YouTube에서 시청하기 ↗
-              </a>
             </div>
             
             <!-- DEU_AI_grandICT_center 대표 썸네일 & YouTube 플레이어 오버레이 -->
