@@ -499,8 +499,8 @@ const App = {
         const userName = currentUser ? currentUser.name : "원우";
         
         if (topNavUserWelcomeText) {
-          topNavUserWelcomeText.textContent = `👋 ${userName}님! 반갑습니다`;
-          topNavUserWelcomeText.style.display = "inline";
+          topNavUserWelcomeText.innerHTML = `👋 ${this.escapeHtml(userName)}님!<br/><span style="font-weight: 500; font-size: 12px; color: var(--color-on-dark-mute, #94a3b8);">반갑습니다</span>`;
+          topNavUserWelcomeText.style.display = "inline-block";
         }
         
         topNavUserBtn.textContent = "🚪 로그아웃하기";
