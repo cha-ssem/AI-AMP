@@ -16,8 +16,7 @@ const App = {
   gallery: [],
   permissions: null,
   initialBalance: 0,
-  initialBalanceUpdatedAt: "",
-  currentUserId: "mem-1301",
+  currentUserId: null,
   currentGalleryCategory: "all",
   activeGalleryId: null,
   tempGalleryPhotos: [],
@@ -36,6 +35,10 @@ const App = {
     this.permissions = StorageService.getPermissions();
     this.initialBalance = StorageService.getInitialBalance();
     this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
+
+    // 더미 목업 회원 ID가 남아있을 경우 메모리에서 즉시 필터링
+    const dummyIds = new Set(["mem-1301", "mem-1302", "mem-1303", "mem-1304", "mem-1305", "mem-1306", "mem-1307", "mem-1308", "mem-201", "mem-202", "mem-203", "mem-204", "mem-205", "mem-206", "mem-207", "mem-208"]);
+    this.members = (this.members || []).filter(m => m && !dummyIds.has(m.id));
 
     // 브라우저 새로고침 및 재접속 시 세션(로그인 또는 로그아웃 상태) 및 30분 유효기간 검증
     const savedUserId = StorageService.getCurrentUserId();
@@ -229,47 +232,45 @@ const App = {
 
     try {
       const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "members"));
-      if (!querySnapshot || querySnapshot.empty) return;
-
       const cloudMembers = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const member = { ...data, id: docSnap.id || data.id };
-        if ("industryIcon" in member) {
-          delete member.industryIcon;
-        }
-        if (member.industry) {
-          member.industryImg = this.getIndustryImage(member.industry);
-        }
-        cloudMembers.push(member);
-      });
-
-      if (cloudMembers.length > 0) {
-        // 💡 데이터베이스(Firestore)에 등록된 실제 회원 데이터만을 유일하게 유지 (DB에 없는 샘플/목업 회원 제거)
-        this.members = cloudMembers;
-        StorageService.saveMembers(this.members);
-
-        // 💡 이미 로그인된 사용자의 경우 클라우드 DB 상에서 변경된 회원 권한(role: "admin" 등) 감지 시 세션 자동 업데이트!
-        if (this.currentUserId && this.currentRole !== "guest") {
-          const me = this.members.find(m => m.id === this.currentUserId || (m.googleUid && m.googleUid === this.currentUserId));
-          if (me && me.role && me.role !== this.currentRole) {
-            console.log(`💡 클라우드 DB에서 권한 변경 감지됨: ${this.currentRole} -> ${me.role}`);
-            this.setRole(me.role);
-          } else {
-            this.updateRoleUI();
+      if (querySnapshot && !querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const member = { ...data, id: docSnap.id || data.id };
+          if ("industryIcon" in member) {
+            delete member.industryIcon;
           }
+          if (member.industry) {
+            member.industryImg = this.getIndustryImage(member.industry);
+          }
+          cloudMembers.push(member);
+        });
+      }
+
+      // 💡 데이터베이스(Firestore)에 등록된 실제 회원 데이터만을 유일하게 유지 (DB에 없는 샘플/목업 회원 제거)
+      this.members = cloudMembers;
+      StorageService.saveMembers(this.members);
+
+      // 💡 이미 로그인된 사용자의 경우 클라우드 DB 상에서 변경된 회원 권한(role: "admin" 등) 감지 시 세션 자동 업데이트!
+      if (this.currentUserId && this.currentRole !== "guest") {
+        const me = this.members.find(m => m.id === this.currentUserId || (m.googleUid && m.googleUid === this.currentUserId));
+        if (me && me.role && me.role !== this.currentRole) {
+          console.log(`💡 클라우드 DB에서 권한 변경 감지됨: ${this.currentRole} -> ${me.role}`);
+          this.setRole(me.role);
         } else {
           this.updateRoleUI();
         }
+      } else {
+        this.updateRoleUI();
+      }
 
-        // 💡 현재 활성화된 탭이 Overview(home)인 경우 최신 회원 통계 즉시 갱신
-        if (this.currentTab === "home") {
-          this.renderHome();
-        } else if (this.currentTab === "members") {
-          this.renderMemberDirectory();
-        } else if (this.currentTab === "admin") {
-          this.renderAdmin();
-        }
+      // 💡 현재 활성화된 탭 화면 최신 갱신
+      if (this.currentTab === "home") {
+        this.renderHome();
+      } else if (this.currentTab === "members") {
+        this.renderMemberDirectory();
+      } else if (this.currentTab === "admin") {
+        this.renderAdmin();
       }
     } catch (err) {
       console.warn("Firestore 회원 데이터 로딩 시도 중 예외:", err);
@@ -281,20 +282,21 @@ const App = {
 
     try {
       const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "lectures"));
-      if (!querySnapshot) return;
-
       const cloudLectures = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        cloudLectures.push({ ...data, id: docSnap.id || data.id });
-      });
+      if (querySnapshot && !querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          cloudLectures.push({ ...data, id: docSnap.id || data.id });
+        });
+      }
 
-      if (cloudLectures.length > 0) {
-        // 💡 오직 데이터베이스(Firestore 'lectures')에 실제로 저장되어 있는 강의 커리큘럼 일정만 유일하게 유지! (DB에 없는 목업 샘플 강의 전면 제거)
-        cloudLectures.sort((a, b) => a.week - b.week);
-        this.lectures = cloudLectures;
-        StorageService.saveLectures(this.lectures);
+      // 💡 오직 데이터베이스(Firestore 'lectures')에 실제로 저장되어 있는 강의 커리큘럼 일정만 유일하게 유지!
+      cloudLectures.sort((a, b) => (a.week || 0) - (b.week || 0));
+      this.lectures = cloudLectures;
+      StorageService.saveLectures(this.lectures);
+      if (this.currentTab === "schedule" || this.currentTab === "home") {
         this.renderSchedule();
+        if (this.currentTab === "home") this.renderHome();
       }
     } catch (err) {
       console.warn("Firestore lectures 클라우드 DB 로딩 예외:", err);
@@ -306,17 +308,17 @@ const App = {
 
     try {
       const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "events"));
-      if (!querySnapshot) return;
-
       const cloudEvents = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        cloudEvents.push({ ...data, id: docSnap.id || data.id });
-      });
+      if (querySnapshot && !querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          cloudEvents.push({ ...data, id: docSnap.id || data.id });
+        });
+      }
 
-      if (cloudEvents.length > 0) {
-        this.events = cloudEvents;
-        StorageService.saveEvents(this.events);
+      this.events = cloudEvents;
+      StorageService.saveEvents(this.events);
+      if (this.currentTab === "schedule") {
         this.renderSchedule();
       }
     } catch (err) {
@@ -329,48 +331,48 @@ const App = {
 
     try {
       const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "ledger"));
-      if (!querySnapshot || querySnapshot.empty) return;
-
       const cloudLedger = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const docId = docSnap.id || data.id;
+      if (querySnapshot && !querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const docId = docSnap.id || data.id;
 
-        // 💡 initial_balance 이월 잔고 설정 문서는 장부 항목이 아닌 이월 잔고 설정값으로 분리 저장
-        if (docId === "initial_balance" || data.isConfig === true) {
-          if (typeof data.initialBalance === "number") {
-            this.initialBalance = data.initialBalance;
-            const updatedDate = data.updatedAt || "";
-            this.initialBalanceUpdatedAt = updatedDate;
-            StorageService.saveInitialBalance(data.initialBalance, updatedDate);
-            const initialEl = document.getElementById("initialBalanceAmount");
-            if (initialEl) initialEl.textContent = `${this.initialBalance.toLocaleString()}원`;
-            const initialDateEl = document.getElementById("initialBalanceDate");
-            if (initialDateEl) {
-              if (updatedDate) {
-                let dateDisplay = updatedDate;
-                if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
-                  dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
-                } else if (typeof dateDisplay === "string" && dateDisplay.includes("T")) {
-                  dateDisplay = dateDisplay.split("T")[0];
+          // 💡 initial_balance 이월 잔고 설정 문서는 장부 항목이 아닌 이월 잔고 설정값으로 분리 저장
+          if (docId === "initial_balance" || data.isConfig === true) {
+            if (typeof data.initialBalance === "number") {
+              this.initialBalance = data.initialBalance;
+              const updatedDate = data.updatedAt || "";
+              this.initialBalanceUpdatedAt = updatedDate;
+              StorageService.saveInitialBalance(data.initialBalance, updatedDate);
+              const initialEl = document.getElementById("initialBalanceAmount");
+              if (initialEl) initialEl.textContent = `${this.initialBalance.toLocaleString()}원`;
+              const initialDateEl = document.getElementById("initialBalanceDate");
+              if (initialDateEl) {
+                if (updatedDate) {
+                  let dateDisplay = updatedDate;
+                  if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
+                    dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
+                  } else if (typeof dateDisplay === "string" && dateDisplay.includes("T")) {
+                    dateDisplay = dateDisplay.split("T")[0];
+                  }
+                  initialDateEl.textContent = `📅 ${dateDisplay}`;
+                  initialDateEl.style.display = "inline-flex";
+                } else {
+                  initialDateEl.style.display = "none";
                 }
-                initialDateEl.textContent = `📅 ${dateDisplay}`;
-                initialDateEl.style.display = "inline-flex";
-              } else {
-                initialDateEl.style.display = "none";
               }
             }
+            return;
           }
-          return;
-        }
 
-        let normalizedNote = data.note || "-";
-        if (typeof normalizedNote === "string" && (normalizedNote.includes("회원관리 탭 자동 연동") || normalizedNote.includes("회원관리 일괄 납부 처리 연동"))) {
-          normalizedNote = "관리자 납부 처리";
-        }
+          let normalizedNote = data.note || "-";
+          if (typeof normalizedNote === "string" && (normalizedNote.includes("회원관리 탭 자동 연동") || normalizedNote.includes("회원관리 일괄 납부 처리 연동"))) {
+            normalizedNote = "관리자 납부 처리";
+          }
 
-        cloudLedger.push({ ...data, id: docId, note: normalizedNote });
-      });
+          cloudLedger.push({ ...data, id: docId, note: normalizedNote });
+        });
+      }
 
       cloudLedger.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
       this.ledger = cloudLedger;
@@ -381,7 +383,7 @@ const App = {
         this.renderLedger();
       }
     } catch (err) {
-      console.warn("Firestore ledger 클라우드 DB 로딩 예외 (로컬 Fallback 유지):", err);
+      console.warn("Firestore ledger 클라우드 DB 로딩 예외:", err);
     }
   },
 
@@ -390,25 +392,23 @@ const App = {
 
     try {
       const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "gallery"));
-      if (!querySnapshot || querySnapshot.empty) return;
-
       const cloudGallery = [];
-      querySnapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        cloudGallery.push({ ...data, id: docSnap.id || data.id });
-      });
+      if (querySnapshot && !querySnapshot.empty) {
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          cloudGallery.push({ ...data, id: docSnap.id || data.id });
+        });
+      }
 
-      if (cloudGallery.length > 0) {
-        cloudGallery.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
-        this.gallery = cloudGallery;
-        StorageService.saveGallery(this.gallery);
+      cloudGallery.sort((a, b) => new Date(b.date || b.createdAt || 0) - new Date(a.date || a.createdAt || 0));
+      this.gallery = cloudGallery;
+      StorageService.saveGallery(this.gallery);
 
-        if (this.currentTab === "gallery") {
-          this.renderGallery();
-        }
+      if (this.currentTab === "gallery") {
+        this.renderGallery();
       }
     } catch (err) {
-      console.warn("Firestore gallery 클라우드 DB 로딩 예외 (로컬 Fallback 유지):", err);
+      console.warn("Firestore gallery 클라우드 DB 로딩 예외:", err);
     }
   },
 
@@ -967,7 +967,7 @@ const App = {
     });
 
     if (combined.length === 0) {
-      container.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--color-mute);">등록된 13기 강의 커리큘럼 및 일정이 없습니다.</div>`;
+      container.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--color-mute);">등록된 AI AMP 2기 강의 커리큘럼 및 일정이 없습니다.</div>`;
       return;
     }
 

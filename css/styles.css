@@ -1,45 +1,94 @@
-/* NVIDIA CAD Engineering Design System (design1.md) */
+/* ==========================================================================
+   HP Design System - Dong-Eui University AI AMP 2nd Cohort Platform
+   Based on HP_design.md Specification
+   ========================================================================== */
+
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
-  /* Dong-eui ICT Cyber Cyan Blue Brand Accent (Option 3) */
-  --color-primary: #00a8e8;                /* Cyber Cyan Blue */
-  --color-primary-dark: #007bb0;           /* Pressed Cyan Blue */
-  --color-accent-green-pale: #e6f7ff;
+  /* Brand & Accent (HP Electric Blue Family) */
+  --color-primary: #024ad8;                /* HP Electric Blue: Primary CTA fill, link, chevron decoration */
+  --color-primary-bright: #296ef9;         /* Bright Blue: Inside dark slabs */
+  --color-primary-deep: #0e3191;           /* Deep Navy: Pressed state & visited links */
+  --color-primary-soft: #c9e0fc;           /* Soft Blue: Customer stories & selection chips */
 
-  /* Surface */
-  --color-canvas: #ffffff;                 /* Pure White Body Canvas */
-  --color-surface-soft: #f7f7f7;           /* Soft Surface */
-  --color-surface-dark: #18181b;           /* Matte Slate Charcoal (Option 2) */
-  --color-surface-elevated: #242429;
-  --color-hairline: #cccccc;               /* 1px Hairline Border */
-  --color-hairline-strong: #404047;
+  /* Surface & Background (Section Rhythm Bands) */
+  --color-canvas: #ffffff;                 /* Pure White universal page background */
+  --color-paper: #ffffff;                  /* Card surfaces */
+  --color-cloud: #f7f7f7;                  /* Lightest gray section band & alternating rows */
+  --color-fog: #e8e8e8;                    /* Slightly darker gray band & FAQ outer panels */
+  --color-steel: #c2c2c2;                  /* Hairline border for stronger emphasis */
+  --color-hairline: #e8e8e8;               /* 1px clean divider */
+  --color-border-light: #e8e8e8;           /* Standard light border */
+  --color-surface-soft: #f7f7f7;
+  --color-surface-dark: #1a1a1a;
+  --color-surface-elevated: #292929;
 
-  /* Text Roles */
-  --color-ink: #18181b;
-  --color-body: #27272a;
-  --color-mute: #757575;
-  --color-stone: #898989;
-  --color-ash: #a7a7a7;
-  --color-on-primary: #ffffff;
+  /* Text Colors */
+  --color-ink: #1a1a1a;                    /* Universal text color on white surfaces */
+  --color-ink-deep: #000000;               /* Pure black for wordmarks & strong badges */
+  --color-ink-soft: #292929;               /* Alternate near-black inside dark slabs */
+  --color-on-ink: #ffffff;                 /* Pure white on dark slabs */
+  --color-on-primary: #ffffff;             /* Pure white on primary blue */
   --color-on-dark: #ffffff;
-  --color-on-dark-mute: rgba(255, 255, 255, 0.7);
-  --color-link-blue: #0046a4;
+  --color-on-dark-mute: #c2c2c2;
+  --color-charcoal: #3d3d3d;               /* Muted body color on white surfaces */
+  --color-graphite: #636363;               /* Smaller-print, legal lines, timestamps */
+  --color-slate: #636363;                  /* Aliased to graphite */
+  --color-body: #1a1a1a;
+  --color-mute: #636363;
 
-  /* Fonts: Pretendard High-Readability Standard Typography */
-  --font-display: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-  --font-body: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
+  /* Semantic & Special Accents */
+  --color-bloom-coral: #ff5050;            /* Sale tag chip / discount / live badge */
+  --color-bloom-rose: #f9d4d2;             /* Soft pink lifestyle accent */
+  --color-bloom-deep: #b3262b;             /* Error & discount emphasis */
+  --color-bloom-wine: #5a1313;
+  --color-storm-mist: #8ebdce;             /* Teal-storm tones */
+  --color-storm-sea: #7fadbe;
+  --color-storm-deep: #356373;             /* Status accent & neutral infographic tone */
+  --color-error-red: #b3262b;
+  --color-link-blue: #024ad8;
 
-  /* Geometry: Hyper-Angular CAD 2px Corner Signature */
-  --radius-sm: 2px;                        /* Every interactive element */
-  --radius-none: 0px;
+  /* Backward Compatibility Aliases */
+  --color-brand-black: #1a1a1a;
+  --color-primary-nearblack: #1a1a1a;
+  --color-enterprise-green: #1a1a1a;
+  --color-dark-navy: #111111;
+  --color-action-blue: #024ad8;
+  --color-coral: #ff5050;
+  --color-soft-coral: #f9d4d2;
+  --color-soft-stone: #f7f7f7;
+  --color-card-border: #e8e8e8;
+  --color-muted-slate: #c2c2c2;
+  --color-hairline-strong: #3d3d3d;
+
+  /* Typography */
+  --font-display: 'Inter', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+
+  /* 2-Tier Shape System (HP Signature: Buttons sharp 4px, Cards soft 16px) */
+  --radius-none: 0px;                      /* Chevron decorations & full bleed heroes */
+  --radius-xs: 2px;                        /* Secondary chips, sale-tag pills */
+  --radius-sm: 3px;                        /* Small touch zones */
+  --radius-md: 4px;                        /* Primary/Secondary buttons & text inputs */
+  --radius-lg: 8px;                        /* Badge pills, category-icon cards, FAQ rows */
+  --radius-xl: 16px;                       /* Product cards, pricing tiers, photo frames */
+  --radius-pill: 9999px;                   /* Category sub-nav tabs, filter pills */
   --radius-full: 9999px;
 
-  --transition-fast: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+  /* Elevation & Depth (Flat bands + Soft Lift for cards) */
+  --shadow-sm: 0 1px 3px rgba(26, 26, 26, 0.04);
+  --shadow-lift: 0 2px 8px rgba(26, 26, 26, 0.08); /* HP Soft Lift workhorse */
+  --shadow-md: 0 2px 8px rgba(26, 26, 26, 0.08);
+  --shadow-modal: 0 8px 24px rgba(26, 26, 26, 0.12);
+  --shadow-dark: 0 12px 32px rgba(0, 0, 0, 0.28);
+
+  --transition-fast: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-/* Reset & Base */
+/* Reset & Base Setup */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -50,8 +99,8 @@ body {
   font-family: var(--font-body);
   font-weight: 400;
   background-color: var(--color-canvas);
-  color: var(--color-body);
-  line-height: 1.5;
+  color: var(--color-ink);
+  line-height: 1.45;
   font-size: 16px;
   -webkit-font-smoothing: antialiased;
   padding-bottom: 70px;
@@ -63,128 +112,216 @@ body {
   }
 }
 
-/* Typography Utility */
+/* Typography Hierarchy (HP Rule: Display weight is ALWAYS 500, tight line-height) */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   color: var(--color-ink);
-  font-weight: 700;
-  line-height: 1.25;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
 }
 
 h1 {
   font-size: 48px;
+  letter-spacing: -0.03em;
   margin-bottom: 16px;
+  line-height: 1.05;
 }
 
 h2 {
-  font-size: 36px;
+  font-size: 34px;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
 }
 
 h3 {
-  font-size: 24px;
+  font-size: 22px;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
 }
 
 h4 {
-  font-size: 20px;
+  font-size: 18px;
+  line-height: 1.2;
 }
 
-/* NVIDIA Signature Decorative Corner Square Motif */
-.corner-square {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 12px;
-  height: 12px;
-  background-color: var(--color-primary);
-  display: block;
+p {
+  color: var(--color-charcoal);
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* HP Mono / Caption Label */
+.mono-label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-graphite);
 }
 
 /* Role Simulator Bar */
 .role-simulator-bar {
-  background-color: #111111;
+  background-color: var(--color-ink-deep);
   color: #ffffff;
-  padding: 8px 16px;
+  padding: 8px 20px;
   font-size: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
   z-index: 1000;
+  border-bottom: 1px solid #292929;
 }
 
 .role-simulator-badge {
   background: var(--color-primary);
   color: #ffffff;
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
-  padding: 2px 8px;
-  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
   text-transform: uppercase;
+  font-family: var(--font-mono);
+  letter-spacing: 0.5px;
 }
 
 .role-switcher {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .role-btn {
-  background: var(--color-surface-elevated);
-  border: none;
+  background: #292929;
+  border: 1px solid #3d3d3d;
   color: #ffffff;
   padding: 4px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 11px;
-  font-weight: 700;
+  border-radius: var(--radius-md);
+  font-size: 11.5px;
+  font-weight: 500;
   cursor: pointer;
   transition: var(--transition-fast);
 }
 
-.role-btn:hover, .role-btn.active {
+.role-btn:hover {
   background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Top Utility Strip (HP 36px Dark Ink Bar) */
+.announcement-bar {
+  background-color: var(--color-ink);
+  color: #ffffff;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+  font-size: 13px;
+  position: relative;
+  z-index: 1001;
+  font-family: var(--font-body);
+}
+
+.announcement-bar-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.announcement-bar-tag {
+  background: var(--color-bloom-coral);
+  color: #ffffff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.announcement-bar-link {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.announcement-bar-link:hover {
+  color: var(--color-primary-soft);
+}
+
+.announcement-bar-close {
+  position: absolute;
+  right: 20px;
+  background: none;
+  border: none;
+  color: var(--color-steel);
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  line-height: 1;
+}
+
+.announcement-bar-close:hover {
   color: #ffffff;
 }
 
-/* Primary Top Navigation Bar (64px Black Sticky) */
+/* Primary Top Navigation Bar (HP 64px Clean White Nav) */
 .navbar {
-  background-color: var(--color-surface-dark);
-  border-bottom: 1px solid var(--color-hairline-strong);
+  background-color: var(--color-canvas);
+  border-bottom: 1px solid var(--color-hairline);
   position: sticky;
   top: 0;
   z-index: 999;
 }
 
 .nav-container {
-  max-width: 1280px;
+  max-width: 1366px;
   margin: 0 auto;
   height: 64px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  padding: 0 32px;
 }
 
 .brand-logo {
   font-family: var(--font-display);
   font-size: 20px;
-  font-weight: 700;
-  color: #ffffff;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
   text-decoration: none;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   height: 64px;
   line-height: 1;
   margin: 0;
 }
 
-.brand-logo .nvidia-green {
-  color: var(--color-primary);
+.brand-logo .ai-blue {
+  color: #ffffff;
+  font-weight: 700;
+  background: var(--color-primary);
+  padding: 4px 10px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  letter-spacing: 0.5px;
 }
 
 .nav-links {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 6px;
   list-style: none;
   height: 64px;
   margin: 0;
@@ -193,52 +330,59 @@ h4 {
 
 .nav-item {
   text-decoration: none;
-  color: var(--color-on-dark-mute);
-  font-size: 14.5px;
-  font-weight: 600;
+  color: var(--color-ink);
+  font-size: 15px;
+  font-weight: 500;
   padding: 0 16px;
   height: 64px;
   display: inline-flex;
   align-items: center;
   line-height: 1;
   transition: var(--transition-fast);
-  border-bottom: 3px solid transparent;
   position: relative;
 }
 
 .nav-item:hover {
-  color: #ffffff;
-  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--color-primary);
 }
 
 .nav-item.active {
-  color: #ffffff !important;
-  font-weight: 700;
-  background-color: rgba(0, 168, 232, 0.16);
-  border-bottom: 3px solid var(--color-primary);
+  color: var(--color-primary) !important;
+  font-weight: 600;
+}
+
+.nav-item.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 12px;
+  right: 12px;
+  height: 3px;
+  background-color: var(--color-primary);
+  border-radius: 2px 2px 0 0;
 }
 
 .nav-item.restricted-tab::after {
   content: "🔒";
-  margin-left: 4px;
+  margin-left: 5px;
   font-size: 11px;
 }
 
-/* Mobile Bottom Navigation (2px CAD) */
+/* Mobile Bottom Navigation */
 .mobile-bottom-nav {
   display: none;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  height: calc(62px + env(safe-area-inset-bottom, 0px));
+  height: calc(60px + env(safe-area-inset-bottom, 0px));
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  background: var(--color-surface-dark);
-  border-top: 1px solid var(--color-hairline-strong);
+  background: var(--color-canvas);
+  border-top: 1px solid var(--color-hairline);
   z-index: 9990;
   justify-content: space-around;
   align-items: center;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
 .mobile-nav-btn {
@@ -247,9 +391,9 @@ h4 {
   align-items: center;
   justify-content: center;
   gap: 2px;
-  color: var(--color-on-dark-mute);
+  color: var(--color-graphite);
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 500;
   text-decoration: none;
   background: none;
   border: none;
@@ -265,153 +409,363 @@ h4 {
 
 .mobile-nav-btn.active {
   color: var(--color-primary) !important;
-  background-color: rgba(0, 168, 232, 0.14);
-  border-top: 3px solid var(--color-primary);
+  font-weight: 700;
 }
 
-/* NVIDIA CAD Rectangular Buttons (2px Corner Signature) */
+/* HP Buttons (Uppercase, 4px Radius, 0.7px Letter Spacing) */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 11px 24px;
-  border-radius: var(--radius-sm); /* 2px Corner Signature */
-  font-size: 16px;
-  font-weight: 700;
+  padding: 12px 24px;
+  border-radius: var(--radius-md); /* HP 4px Sharp Radius */
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
   border: 1px solid transparent;
   cursor: pointer;
   transition: var(--transition-fast);
   text-decoration: none;
   min-height: 44px;
+  font-family: var(--font-body);
 }
 
+/* HP Electric Blue Primary CTA */
 .btn-primary {
   background-color: var(--color-primary);
   color: var(--color-on-primary);
+  border-color: var(--color-primary);
 }
 
-.btn-primary:hover, .btn-primary:active {
-  background-color: var(--color-primary-dark);
+.btn-primary:hover {
+  background-color: var(--color-primary-deep);
+  border-color: var(--color-primary-deep);
+  transform: translateY(-1px);
 }
 
+.btn-primary:active {
+  background-color: var(--color-primary-deep);
+  transform: translateY(0);
+}
+
+/* HP Ink Button (Black filled CTA) */
+.btn-ink {
+  background-color: var(--color-ink);
+  color: #ffffff;
+  border-color: var(--color-ink);
+}
+
+.btn-ink:hover {
+  background-color: var(--color-ink-deep);
+  border-color: var(--color-ink-deep);
+}
+
+/* Secondary & Text Links */
+.btn-secondary, .btn-ghost-link {
+  background: transparent;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: 0;
+  border: none;
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: auto;
+}
+
+.btn-secondary:hover, .btn-ghost-link:hover {
+  color: var(--color-primary-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* HP Outline Buttons */
 .btn-outline {
-  background-color: transparent;
-  color: var(--color-ink);
-  border: 2px solid var(--color-primary);
+  background-color: var(--color-canvas);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
 }
 
 .btn-outline:hover {
-  background-color: rgba(118, 185, 0, 0.08);
+  background-color: var(--color-cloud);
+  border-color: var(--color-primary-deep);
+  color: var(--color-primary-deep);
+}
+
+.btn-outline-ink {
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  border: 1px solid var(--color-ink);
+}
+
+.btn-outline-ink:hover {
+  background-color: var(--color-cloud);
 }
 
 .btn-outline-on-dark {
   background-color: transparent;
-  color: var(--color-on-dark);
-  border: 1px solid var(--color-on-dark);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .btn-outline-on-dark:hover {
-  background-color: var(--color-on-dark);
-  color: var(--color-surface-dark);
+  background-color: #ffffff;
+  color: var(--color-ink);
+  border-color: #ffffff;
 }
 
-.btn-ghost-link {
-  color: var(--color-primary);
-  font-weight: 700;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  background: none;
-  border: none;
-  padding: 0;
-  font-size: 15px;
+.btn-pill-outline {
+  background-color: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-steel);
+  border-radius: var(--radius-pill);
 }
 
-.btn-ghost-link:hover {
-  color: var(--color-primary-dark);
+.btn-pill-outline:hover {
+  background-color: var(--color-cloud);
+  border-color: var(--color-ink);
 }
 
 .btn-sm {
-  padding: 8px 16px;
-  font-size: 14px;
+  padding: 7px 16px;
+  font-size: 12.5px;
+  letter-spacing: 0.5px;
   min-height: 36px;
 }
 
-/* Black Canvas Hero Chapter ({colors.surface-dark} #000000) */
+/* HP Signature Chevron Decoration (45~60 Degree Parallelogram Slash) */
+.chevron-decoration-container {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 64px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.chevron-decoration-container.left {
+  left: -20px;
+}
+
+.chevron-decoration-container.right {
+  right: -20px;
+}
+
+.chevron-slash {
+  width: 18px;
+  height: 140%;
+  background-color: var(--color-primary);
+  transform: rotate(25deg);
+  position: absolute;
+  top: -20%;
+  opacity: 0.9;
+}
+
+.chevron-decoration-container.left .chevron-slash {
+  left: 24px;
+}
+
+.chevron-decoration-container.right .chevron-slash {
+  right: 24px;
+}
+
+/* Hero Section: HP Enterprise Hero Chapter (Soft Cloud Band / Dark Navy Slab with 16px Radius) */
 .hero-card-dark-nvidia {
-  background-color: var(--color-surface-dark);
-  color: var(--color-on-dark);
-  padding: 64px 48px;
+  background-color: var(--color-ink);
+  color: #ffffff;
+  padding: 56px 48px;
   margin-bottom: 48px;
-  border-radius: var(--radius-none);
+  border-radius: var(--radius-xl); /* HP 16px Card Radius */
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1.25fr 0.75fr;
   gap: 40px;
-  align-items: flex-start;
+  align-items: center;
   position: relative;
   overflow: hidden;
+  border: 1px solid #292929;
+  box-shadow: var(--shadow-lift);
+}
+
+/* HP Blue Accent Chevron Bar in Hero */
+.hero-card-dark-nvidia::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background-color: var(--color-primary);
 }
 
 .hero-card-dark-nvidia h1 {
-  color: var(--color-on-dark);
-  font-size: 48px;
-  font-weight: 700;
+  color: #ffffff;
+  font-size: 44px;
+  font-weight: 500;
   margin-bottom: 16px;
-  line-height: 1.15;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
 }
 
 .hero-subhead-nvidia {
-  font-size: 18px;
-  color: var(--color-on-dark-mute);
+  font-size: 16.5px;
+  color: rgba(255, 255, 255, 0.85);
   margin-bottom: 28px;
   line-height: 1.5;
+  font-weight: 400;
 }
 
 .hero-stats-nvidia {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
-  border-top: 1px solid var(--color-hairline-strong);
+  gap: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
   padding-top: 24px;
   margin-top: 32px;
 }
 
 .stat-num-nvidia {
-  font-size: 36px;
-  font-weight: 700;
-  color: var(--color-primary);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 500;
+  color: #ffffff;
+  letter-spacing: -0.02em;
 }
 
 .stat-label-nvidia {
-  font-size: 13px;
-  color: var(--color-on-dark-mute);
+  font-size: 12px;
+  color: var(--color-steel);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+/* HP Monitor Card */
 .hero-monitor-card {
-  background: var(--color-surface-elevated);
-  border: 1px solid var(--color-hairline-strong);
+  background-color: var(--color-ink-soft);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 24px;
-  border-radius: var(--radius-sm);
-  margin-top: 115px;
+  border-radius: var(--radius-xl); /* 16px */
+  margin-top: 0;
+  box-shadow: var(--shadow-dark);
 }
 
-/* NVIDIA CAD Product Cards (2px Corner + 12px Corner Square Motif) */
+/* Trust Logo Strip (HP Monochrome Partner Marks) */
+.trust-logo-strip {
+  text-align: center;
+  margin: 16px 0 56px 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--color-hairline);
+  border-bottom: 1px solid var(--color-hairline);
+  background-color: var(--color-cloud);
+  border-radius: var(--radius-lg);
+}
+
+.trust-logo-strip-title {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-graphite);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 18px;
+}
+
+.trust-logo-strip-grid {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 36px 48px;
+}
+
+.trust-logo-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-ink);
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.trust-logo-item:hover {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+.trust-logo-item img {
+  height: 24px;
+  filter: grayscale(100%);
+  opacity: 0.8;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.trust-logo-item:hover img {
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+/* HP Taxonomy & Filter Chips */
+.pill-tag-nvidia, .blog-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--color-primary-soft);
+  color: var(--color-primary-deep);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  letter-spacing: 0.5px;
+  font-family: var(--font-mono);
+}
+
+.pill-tag-nvidia.active, .blog-filter-chip.active {
+  background-color: var(--color-primary);
+  color: #ffffff;
+  border-color: var(--color-primary);
+}
+
+/* HP Product Cards & Capability Cards (Pure White with 16px Radius + Soft Lift) */
 .nvidia-card-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+  margin-bottom: 48px;
 }
 
-@media (max-width: 992px) {
-  .nvidia-card-grid {
-    grid-template-columns: 1fr;
-  }
+.product-card {
+  background-color: var(--color-canvas);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-xl); /* HP 16px Radius */
+  padding: 28px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-lift);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-/* Members 5-Column Grid Layout (1줄에 5개씩 배치) */
+.product-card:hover {
+  border-color: var(--color-primary-soft);
+  box-shadow: 0 4px 16px rgba(2, 74, 216, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Member 5-Column Grid */
 .member-grid-5col {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -446,72 +800,61 @@ h4 {
   }
 }
 
-.product-card {
+/* Member Tile (card-product style) */
+.member-card-tile {
   background-color: var(--color-canvas);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  padding: 24px;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  transition: var(--transition-fast);
+  border-radius: var(--radius-xl);
+  padding: 20px;
+  box-shadow: var(--shadow-lift);
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.product-card:hover {
+.member-card-tile:hover {
   border-color: var(--color-primary);
+  transform: translateY(-2px);
 }
 
-.pill-tag-nvidia {
-  display: inline-block;
-  background-color: var(--color-surface-dark);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: var(--radius-sm);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/* LIVE ACTIVE Red Dot Blinking Animation */
-@keyframes redDotBlink {
+/* LIVE ACTIVE Status Dot (Bloom Coral) */
+@keyframes bloomPulse {
   0%, 100% {
     opacity: 1;
     transform: scale(1);
-    box-shadow: 0 0 6px #ef4444;
   }
   50% {
-    opacity: 0.2;
+    opacity: 0.4;
     transform: scale(0.85);
-    box-shadow: 0 0 1px #ef4444;
   }
 }
 
 .live-active-badge {
-  background-color: #000000 !important;
+  background-color: var(--color-ink) !important;
   color: #ffffff !important;
-  border: 1px solid var(--color-hairline-strong);
+  border: 1px solid rgba(255, 255, 255, 0.25);
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
 }
 
 .live-active-dot {
   width: 7px;
   height: 7px;
-  background-color: #ef4444;
+  background-color: var(--color-bloom-coral);
   border-radius: 50%;
   display: inline-block;
-  animation: redDotBlink 1.2s infinite ease-in-out;
+  animation: bloomPulse 1.5s infinite ease-in-out;
 }
 
-/* Control Bar */
+/* Control Bar (HP Fog Surface Band) */
 .control-bar {
-  background-color: var(--color-surface-soft);
+  background-color: var(--color-cloud);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
-  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
   display: flex;
   gap: 16px;
   align-items: center;
@@ -520,13 +863,14 @@ h4 {
   flex-wrap: wrap;
 }
 
+/* Form Inputs (HP 4px Sharp Radius) */
 .form-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 11px 16px;
   background-color: var(--color-canvas);
-  border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm); /* 2px Corner */
-  font-size: 15px;
+  border: 1px solid var(--color-steel);
+  border-radius: var(--radius-md); /* 4px */
+  font-size: 14.5px;
   font-family: inherit;
   color: var(--color-ink);
   outline: none;
@@ -535,16 +879,18 @@ h4 {
 }
 
 .form-input:focus {
-  border-color: var(--color-primary); /* NVIDIA Green Focus Border */
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
 }
 
-/* NVIDIA Table */
+/* HP Data Tables */
 .nvidia-table-wrapper {
   background: var(--color-canvas);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-lg);
   overflow-x: auto;
   margin-bottom: 32px;
+  box-shadow: var(--shadow-lift);
 }
 
 .nvidia-table {
@@ -552,25 +898,34 @@ h4 {
   min-width: 600px;
   border-collapse: collapse;
   text-align: left;
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .nvidia-table th {
-  background: var(--color-surface-soft);
-  padding: 12px 14px;
-  font-weight: 700;
-  color: var(--color-ink);
+  background: var(--color-cloud);
+  padding: 14px 16px;
+  font-weight: 600;
+  color: var(--color-graphite);
   border-bottom: 1px solid var(--color-hairline);
-  font-size: 14px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .nvidia-table td {
-  padding: 12px 14px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--color-hairline);
   font-size: 14px;
   vertical-align: middle;
+  color: var(--color-ink);
 }
 
+.nvidia-table tr:hover td {
+  background-color: #fafafa;
+}
+
+/* Ledger Summary Cards */
 .ledger-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -581,43 +936,64 @@ h4 {
 .ledger-summary-card {
   background: var(--color-canvas);
   border: 1px solid var(--color-hairline);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xl);
   padding: 24px;
   position: relative;
+  box-shadow: var(--shadow-lift);
 }
 
 .ledger-summary-card.balance {
-  background: var(--color-surface-dark);
+  background: var(--color-ink);
   color: #ffffff;
-  border-color: var(--color-surface-dark);
+  border-color: var(--color-ink);
 }
 
 .ledger-summary-card.balance .stat-num-nvidia {
-  color: var(--color-primary);
+  color: var(--color-primary-bright);
 }
 
-/* Black Canvas Footer Section ({colors.surface-dark} #000000) */
+/* HP Dark Prelude Help Band & Footer */
+.help-band-hp {
+  background-color: var(--color-ink);
+  color: #ffffff;
+  padding: 48px 32px;
+  border-radius: var(--radius-xl);
+  margin-top: 64px;
+  margin-bottom: 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.help-band-hp h3 {
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
 .footer-section {
-  background-color: var(--color-surface-dark);
-  color: var(--color-on-dark-mute);
-  padding: 64px 24px 32px 24px;
-  border-top: 1px solid var(--color-hairline-strong);
+  background-color: var(--color-ink);
+  color: var(--color-steel);
+  padding: 64px 32px 40px 32px;
+  border-top: 1px solid #292929;
   margin-top: 80px;
 }
 
-/* Modal Overlay & Dialog (NVIDIA Style) */
+/* Modal Overlay & Dialog (HP 16px Radius + Floating Shadow) */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(26, 26, 26, 0.65);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 4000;
   padding: 20px;
+  backdrop-filter: blur(2px);
 }
 
 .modal-overlay.active {
@@ -627,48 +1003,51 @@ h4 {
 
 .modal-content {
   background: var(--color-canvas);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-xl); /* 16px */
   width: 100%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
   border: 1px solid var(--color-hairline);
   position: relative;
+  box-shadow: var(--shadow-modal);
 }
 
 .modal-header {
-  background: var(--color-surface-dark);
-  color: #ffffff;
+  background: var(--color-canvas);
+  color: var(--color-ink);
   padding: 20px 24px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  border-bottom: 1px solid var(--color-hairline);
 }
 
 .modal-body {
-  padding: 32px;
+  padding: 28px 24px;
 }
 
-/* Toast Notification */
+/* Toast Notification (HP Dark Ink Pill) */
 .toast {
   position: fixed;
   bottom: 80px;
   right: 24px;
-  background: var(--color-surface-dark);
+  background: var(--color-ink);
   color: #ffffff;
   padding: 14px 24px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   border-left: 4px solid var(--color-primary);
   font-size: 14px;
-  font-weight: 700;
+  font-weight: 500;
   z-index: 10001;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   transform: translateY(100px);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-modal);
 }
 
 .toast.show {
@@ -678,16 +1057,16 @@ h4 {
 
 @media (min-width: 769px) {
   .toast {
-    bottom: 28px;
-    right: 28px;
+    bottom: 32px;
+    right: 32px;
   }
 }
 
-/* Main Layout Container */
+/* Main Layout Container (HP 1366px Content Container) */
 .main-wrapper {
-  max-width: 1280px;
-  margin: 32px auto 80px auto;
-  padding: 0 24px;
+  max-width: 1366px;
+  margin: 40px auto 80px auto;
+  padding: 0 32px;
 }
 
 .tab-content {
@@ -700,30 +1079,63 @@ h4 {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Mobile Overrides */
-@media (max-width: 768px) {
+/* Responsive Breakpoints (HP System: 1280, 1024, 768, 480) */
+@media (max-width: 1024px) {
+  .hero-card-dark-nvidia {
+    grid-template-columns: 1fr;
+    padding: 40px 28px;
+  }
+  .nvidia-card-grid {
+    grid-template-columns: 1fr;
+  }
   .nav-links {
     display: none;
   }
   .mobile-bottom-nav {
     display: flex;
   }
-  .hero-card-dark-nvidia {
-    grid-template-columns: 1fr;
-    padding: 36px 24px;
-  }
-  .hero-monitor-card {
-    margin-top: 0;
-  }
   h1 {
-    font-size: 32px;
+    font-size: 36px;
   }
   h2 {
     font-size: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  body {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
+  .main-wrapper {
+    padding: 0 16px;
+    margin-top: 20px;
+  }
+  .nav-container {
+    padding: 0 16px;
+  }
+  .toast {
+    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+    left: 16px;
+    right: 16px;
+    max-width: calc(100% - 32px);
+    justify-content: center;
+    text-align: center;
+  }
+  .modal-overlay {
+    z-index: 10000;
+    padding: 16px;
+    align-items: flex-end;
+  }
+  .modal-content {
+    max-height: 85vh;
+    margin-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  }
+  .modal-body {
+    padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px;
   }
   .ledger-summary-grid {
     grid-template-columns: 1fr;
@@ -737,37 +1149,7 @@ h4 {
   }
 }
 
-/* Mobile Touch & Bottom Bar Safe Area Overrides */
 button, input, select, textarea, a, .btn {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-}
-
-@media (max-width: 768px) {
-  body {
-    padding-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
-  }
-  .toast {
-    bottom: calc(76px + env(safe-area-inset-bottom, 0px));
-    left: 16px;
-    right: 16px;
-    max-width: calc(100% - 32px);
-    justify-content: center;
-    text-align: center;
-  }
-  .modal-overlay {
-    z-index: 10000; /* 모바일 하단 네비게이션 바(9990)보다 높은 최상위 터치 레이어 */
-    padding: 16px;
-    align-items: flex-end;
-  }
-  .modal-content {
-    max-height: 85vh;
-    margin-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
-  }
-  .modal-body {
-    padding: 20px 16px calc(24px + env(safe-area-inset-bottom, 0px)) 16px;
-  }
-  .btn {
-    min-height: 44px; /* 모바일 핑거 터치 표준 규격 적용 */
-  }
 }
