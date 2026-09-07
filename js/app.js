@@ -3589,6 +3589,191 @@ const App = {
     ledgerTable.innerHTML = rowsHtml + initialBalanceRowHtml;
   },
 
+  /**
+   * 💡 장부 목록 엑셀(.xlsx) 파일 내보내기
+   * - 파일명: 기업가정신13기_장부_YYYY-MM-DD.xlsx
+   * - 시트명: YYYY-MM-DD HH시 MM분 SS초
+   * - 1번 행: 필드명
+   * - 2번 행부터: 기초 이월 잔고부터 과거순(역순)으로 기록
+   */
+  exportLedgerToExcel() {
+    try {
+      if (!Array.isArray(this.ledger)) {
+        this.ledger = [];
+      }
+
+      const validLedger = this.ledger.filter(item => {
+        if (!item || item.id === "initial_balance" || item.isConfig === true) {
+          return false;
+        }
+        return true;
+      });
+
+      const initBalance = Number(this.initialBalance) || 0;
+
+      // 💡 초기 이월 잔고 설정 일자 파싱
+      let initialDateDisplay = "2026-03-01";
+      const updatedDate = this.initialBalanceUpdatedAt;
+      if (updatedDate) {
+        if (typeof updatedDate === "object" && updatedDate && updatedDate.seconds) {
+          initialDateDisplay = new Date(updatedDate.seconds * 1000).toISOString().split("T")[0];
+        } else if (typeof updatedDate === "string" && updatedDate.includes("T")) {
+          initialDateDisplay = updatedDate.split("T")[0];
+        } else if (typeof updatedDate === "string" && updatedDate.length >= 10) {
+          initialDateDisplay = updatedDate.substring(0, 10);
+        }
+      }
+
+      // 💡 1. 과거순(오름차순)으로 정렬하여 누적 잔액 계산
+      const sortedChronological = [...validLedger].sort((a, b) => {
+        const dateA = a.date || a.createdAt || "";
+        const dateB = b.date || b.createdAt || "";
+        const dComp = dateA.localeCompare(dateB);
+        if (dComp !== 0) return dComp;
+        const idA = a.createdAt || a.id || "";
+        const idB = b.createdAt || b.id || "";
+        return String(idA).localeCompare(String(idB));
+      });
+
+      let currentRunningBalance = initBalance;
+      sortedChronological.forEach(item => {
+        const amt = Number(item.amount) || 0;
+        const isIncome = item.type === "sponsorship" || item.type === "fee" || item.type === "interest";
+        if (isIncome) {
+          currentRunningBalance += amt;
+        } else {
+          currentRunningBalance -= amt;
+        }
+        item._runningBalance = currentRunningBalance;
+      });
+
+      // 💡 2. 엑셀 데이터 배열 구성 (화면 목록의 역순: 기초 이월 잔고가 2번 행에 맨 처음 오고 과거순으로 누적)
+      const exportData = [];
+
+      // 2번 행: 기초 이월 잔고
+      exportData.push({
+        "날짜": initialDateDisplay,
+        "구분 / 분류": "기초 이월 잔고",
+        "성명 / 장소": "13기 초기 이월금",
+        "내역 설명 (인원)": "기초 잔고 설정액 (기수 이월)",
+        "금액 (원)": initBalance,
+        "잔액 (원)": initBalance,
+        "비고 및 메모": this.initialBalanceUpdatedAt ? `설정일: ${initialDateDisplay}` : "기초 설정 잔고"
+      });
+
+      // 3번 행부터: 과거 거래부터 순차적으로 추가 (시간순/역순)
+      sortedChronological.forEach(item => {
+        const amt = Number(item.amount) || 0;
+        const isIncome = item.type === "sponsorship" || item.type === "fee" || item.type === "interest";
+
+        let typeLabel = "찬조금";
+        if (item.type === "fee") typeLabel = "정회원 회비";
+        else if (item.type === "interest") typeLabel = "예금 이자";
+        else if (item.type === "expense_dining") typeLabel = "네트워킹/회식";
+        else if (item.type === "expense_gift") typeLabel = "선물/행사";
+        else if (item.type === "expense_other" || item.type === "expense") typeLabel = "기타 지출";
+        else if (item.category) typeLabel = item.category;
+
+        let dateDisplay = item.date || "-";
+        if (typeof dateDisplay === "object" && dateDisplay && dateDisplay.seconds) {
+          dateDisplay = new Date(dateDisplay.seconds * 1000).toISOString().split("T")[0];
+        }
+
+        let nameLocation = item.name || "미지정";
+        if (item.location && item.location !== "-") {
+          nameLocation += ` / ${item.location}`;
+        }
+
+        let itemAttendees = item.item || "내역 미기재";
+        if (item.attendees && item.attendees !== "-") {
+          itemAttendees += ` (인원: ${item.attendees})`;
+        }
+
+        exportData.push({
+          "날짜": dateDisplay,
+          "구분 / 분류": typeLabel,
+          "성명 / 장소": nameLocation,
+          "내역 설명 (인원)": itemAttendees,
+          "금액 (원)": isIncome ? amt : -amt,
+          "잔액 (원)": item._runningBalance !== undefined ? item._runningBalance : 0,
+          "비고 및 메모": item.note || ""
+        });
+      });
+
+      // 💡 3. 파일명 및 시트명 생성
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, "0");
+      const day = String(now.getDate()).padStart(2, "0");
+      const hours = String(now.getHours()).padStart(2, "0");
+      const minutes = String(now.getMinutes()).padStart(2, "0");
+      const seconds = String(now.getSeconds()).padStart(2, "0");
+
+      const dateStr = `${year}-${month}-${day}`;
+      const fileName = `기업가정신13기_장부_${dateStr}.xlsx`;
+      const sheetName = `${dateStr} ${hours}시 ${minutes}분 ${seconds}초`;
+
+      // 💡 4. SheetJS를 활용한 엑셀 생성 및 다운로드
+      if (window.XLSX) {
+        const ws = XLSX.utils.json_to_sheet(exportData, {
+          header: ["날짜", "구분 / 분류", "성명 / 장소", "내역 설명 (인원)", "금액 (원)", "잔액 (원)", "비고 및 메모"]
+        });
+
+        // 컬럼 너비 설정 (한글/숫자 자동 여백)
+        ws["!cols"] = [
+          { wch: 14 }, // 날짜
+          { wch: 16 }, // 구분 / 분류
+          { wch: 22 }, // 성명 / 장소
+          { wch: 34 }, // 내역 설명 (인원)
+          { wch: 16 }, // 금액 (원)
+          { wch: 16 }, // 잔액 (원)
+          { wch: 30 }  // 비고 및 메모
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+        XLSX.writeFile(wb, fileName);
+
+        this.showToast(`📊 엑셀 파일(${fileName})이 성공적으로 다운로드되었습니다!`);
+      } else {
+        // Fallback: CSV 다운로드 (UTF-8 BOM)
+        this.fallbackExportCsv(exportData, fileName.replace(".xlsx", ".csv"));
+      }
+    } catch (err) {
+      console.error("엑셀 파일 내보내기 오류:", err);
+      this.showToast("❌ 엑셀 파일 생성 중 오류가 발생했습니다.");
+    }
+  },
+
+  /**
+   * 💡 SheetJS 미로딩 환경을 위한 UTF-8 BOM CSV Fallback 다운로드
+   */
+  fallbackExportCsv(exportData, fileName) {
+    if (!exportData || exportData.length === 0) return;
+    const headers = ["날짜", "구분 / 분류", "성명 / 장소", "내역 설명 (인원)", "금액 (원)", "잔액 (원)", "비고 및 메모"];
+    const csvRows = [headers.join(",")];
+
+    exportData.forEach(row => {
+      const values = headers.map(h => {
+        const val = row[h] !== undefined ? String(row[h]) : "";
+        const escaped = val.replace(/"/g, '""');
+        return `"${escaped}"`;
+      });
+      csvRows.push(values.join(","));
+    });
+
+    const csvContent = "\uFEFF" + csvRows.join("\r\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    this.showToast(`📊 CSV 파일(${fileName})로 장부 내역이 다운로드되었습니다.`);
+  },
+
   async addLedgerEntry(e) {
     if (e) e.preventDefault();
 

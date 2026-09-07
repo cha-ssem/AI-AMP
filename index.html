@@ -9,7 +9,7 @@
 
   <!-- Content Security Policy (웹 표준 다계층 통신 보안) -->
   <meta http-equiv="Content-Security-Policy"
-    content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com; frame-src https://*.firebaseapp.com https://accounts.google.com;" />
+    content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: https: blob:; connect-src 'self' https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://*.googleapis.com https://*.firebaseapp.com https://*.firebaseio.com; frame-src https://*.firebaseapp.com https://accounts.google.com;" />
 
   <!-- Open Graph / KakaoTalk Link Sharing Preview -->
   <meta property="og:type" content="website" />
@@ -830,10 +830,15 @@
             <option value="expense_other">🔴 기타 지출</option>
           </select>
         </div>
-        <div style="display: flex; gap: 10px; align-items: center;">
+        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
           <input type="text" id="ledgerSearchInput" class="form-input"
             style="padding: 5px 12px; font-size: 13px; width: 220px;" placeholder="성명, 장소, 내역 검색..."
             oninput="App.renderLedger()" />
+          <button type="button" class="btn btn-sm" onclick="App.exportLedgerToExcel()"
+            style="background: #107c41; color: #ffffff; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border: none; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,0.15);"
+            title="현재 작성된 전체 장부 내역을 엑셀(.xlsx) 파일로 내보내기">
+            📊 엑셀 파일로 내보내기
+          </button>
         </div>
       </div>
 
@@ -1968,6 +1973,9 @@
       </form>
     </div>
   </div>
+
+  <!-- SheetJS (Excel Export Library) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- JavaScript Scripts -->
   <script src="js/mock-data.js"></script>
