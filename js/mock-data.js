@@ -422,4 +422,52 @@ class StorageService {
       localStorage.removeItem("enterprise_current_user_id");
     }
   }
+
+  /* 💡 회원 등급별 동적 권한(RBAC) 스토리지 관리 */
+  static getPermissions() {
+    const data = localStorage.getItem("enterprise_13th_permissions");
+    if (!data) {
+      localStorage.setItem("enterprise_13th_permissions", JSON.stringify(DEFAULT_PERMISSIONS));
+      return JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    }
+    try {
+      const parsed = JSON.parse(data);
+      // 누락된 기능 항목이 있는 경우 기본값으로 자동 병합 보정
+      const merged = { ...DEFAULT_PERMISSIONS };
+      Object.keys(DEFAULT_PERMISSIONS).forEach(feat => {
+        merged[feat] = { ...DEFAULT_PERMISSIONS[feat], ...(parsed[feat] || {}) };
+        // 관리자(admin) 권한은 항상 true 고정
+        merged[feat].admin = true;
+      });
+      return merged;
+    } catch (e) {
+      return JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    }
+  }
+
+  static savePermissions(permissions) {
+    localStorage.setItem("enterprise_13th_permissions", JSON.stringify(permissions));
+  }
 }
+
+/* 💡 기본 회원 등급별 기능 접근 권한 정의 */
+const DEFAULT_PERMISSIONS = {
+  members_view: { guest: false, regular: false, full: true, exec: true, admin: true },
+  curriculum_download: { guest: false, regular: false, full: true, exec: true, admin: true },
+  curriculum_manage: { guest: false, regular: false, full: false, exec: true, admin: true },
+  gallery_view: { guest: false, regular: true, full: true, exec: true, admin: true },
+  gallery_manage: { guest: false, regular: false, full: false, exec: true, admin: true },
+  ledger_view: { guest: false, regular: false, full: false, exec: true, admin: true },
+  ledger_manage: { guest: false, regular: false, full: false, exec: true, admin: true }
+};
+
+/* 💡 권한 제어 매트릭스 대시보드 표시용 기능 메타데이터 */
+const PERMISSION_FEATURES = [
+  { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람" },
+  { key: "curriculum_download", name: "📁 강의 교안(PDF) 다운로드", desc: "Curriculum 메뉴에서 강의 교안 파일 다운로드 버튼 활성화" },
+  { key: "curriculum_manage", name: "📅 강의 & 행사 일정 관리", desc: "강의 커리큘럼 및 네트워킹 행사 등록·수정·삭제 및 카톡공유" },
+  { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
+  { key: "gallery_manage", name: "✍️ 갤러리 게시글 등록·관리", desc: "새 행사 이야기 및 사진 등록, 세부내용 수정 및 삭제" },
+  { key: "ledger_view", name: "💰 회계 장부 열람", desc: "Admin & Ledger 메뉴 접근 및 찬조/회식 장부 내역과 잔액 열람" },
+  { key: "ledger_manage", name: "⚙️ 회계 장부 및 이월잔고 관리", desc: "수입/지출 내역 등록·수정, 영수증 관리 및 초기 이월잔고 설정" }
+];

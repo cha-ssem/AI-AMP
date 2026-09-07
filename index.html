@@ -46,7 +46,7 @@
 
       <div style="display: flex; align-items: center; gap: 14px;">
         <span id="topNavUserWelcomeText"
-          style="font-size: 13px; font-weight: 600; color: #ffffff; cursor: pointer; display: none; line-height: 1.25; text-align: right;"
+          style="font-size: 13.5px; font-weight: 600; color: #ffffff; cursor: pointer; display: none; white-space: nowrap;"
           onclick="App.switchTab('profile')" title="내 프로필 페이지로 이동"></span>
         <button id="topNavUserBtn" class="btn btn-primary btn-sm" onclick="App.openRegisterModal()">
           📝 회원가입하기 →
@@ -580,9 +580,60 @@
 
     <!-- 5. ADMIN & LEDGER TAB -->
     <section id="tab-admin" class="tab-content">
-      <div style="margin-bottom: 32px;">
+      <div style="margin-bottom: 28px;">
         <span class="pill-tag-nvidia">ADMINISTRATION & LEDGER</span>
-        <h2 style="font-size: 36px; margin-top: 8px;">회원 등급 & 네트워킹 회계 장부</h2>
+        <h2 style="font-size: 34px; margin-top: 8px;">회원 등급 & 네트워킹 회계 장부</h2>
+      </div>
+
+      <!-- 🛡️ 최고 관리자(admin) 전용 : 회원 등급별 기능 접근 권한 관리 대시보드 -->
+      <div id="adminPermissionsSection" class="product-card" style="margin-bottom: 36px; border: 1.5px solid #6366f1; background: linear-gradient(145deg, rgba(99, 102, 241, 0.04), rgba(79, 70, 229, 0.02)); box-shadow: 0 8px 24px rgba(99, 102, 241, 0.08); display: none;">
+        <span class="corner-square" style="background-color: #6366f1;"></span>
+        
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid var(--color-hairline); padding-bottom: 14px;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+              <span class="pill-tag-nvidia" style="background: #6366f1; color: #fff; font-size: 11px; padding: 2px 7px;">SUPER ADMIN ONLY</span>
+              <h3 style="font-size: 19px; margin: 0; font-weight: 800; color: var(--color-ink); display: flex; align-items: center; gap: 6px;">
+                🛡️ 회원 등급별 기능 접근 권한 관리 대시보드
+              </h3>
+            </div>
+            <p style="font-size: 13px; color: var(--color-mute); margin: 0; line-height: 1.4;">
+              체크박스를 켜고 끄는 것만으로 각 등급별(비회원/일반/정회원/임원) 메뉴 접근 및 다운로드, 등록 권한을 실시간 제어할 수 있습니다.
+            </p>
+          </div>
+
+          <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+            <button type="button" class="btn btn-outline btn-sm" 
+                    style="border-color: #94a3b8; color: var(--color-mute); font-size: 12px; padding: 5px 12px;"
+                    onclick="App.resetPermissionsToDefault()">
+              🔄 기본값 초기화
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" 
+                    style="background: #4f46e5; border-color: #4f46e5; font-size: 12.5px; font-weight: 700; padding: 6px 16px; box-shadow: 0 2px 8px rgba(79, 70, 229, 0.25);"
+                    onclick="App.savePermissions(event)">
+              💾 권한 설정 저장 및 클라우드 동기화
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Permissions Matrix Table -->
+        <div class="nvidia-table-wrapper" style="margin-bottom: 0;">
+          <table class="nvidia-table" style="font-size: 13px; text-align: center;">
+            <thead>
+              <tr style="background: rgba(99, 102, 241, 0.08);">
+                <th style="text-align: left; min-width: 220px; font-weight: 700; color: var(--color-ink);">주요 시스템 기능</th>
+                <th style="width: 100px; text-align: center; color: #64748b;">미가입 비회원<br><span style="font-size: 10.5px; font-weight: normal;">(guest)</span></th>
+                <th style="width: 100px; text-align: center; color: #0284c7;">일반회원<br><span style="font-size: 10.5px; font-weight: normal;">(regular)</span></th>
+                <th style="width: 100px; text-align: center; color: #16a34a;">정회원<br><span style="font-size: 10.5px; font-weight: normal;">(full)</span></th>
+                <th style="width: 100px; text-align: center; color: #f59e0b;">임원<br><span style="font-size: 10.5px; font-weight: normal;">(exec)</span></th>
+                <th style="width: 100px; text-align: center; color: #7c3aed;">관리자<br><span style="font-size: 10.5px; font-weight: normal;">(admin)</span></th>
+              </tr>
+            </thead>
+            <tbody id="permissionsMatrixBody">
+              <!-- Rendered dynamically via App.renderPermissionsMatrix() -->
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <!-- Member Table Header & Actions -->
@@ -1780,6 +1831,7 @@
       if (typeof window.App.fetchCloudEvents === "function") window.App.fetchCloudEvents();
       if (typeof window.App.fetchCloudLedger === "function") window.App.fetchCloudLedger();
       if (typeof window.App.fetchCloudGallery === "function") window.App.fetchCloudGallery();
+      if (typeof window.App.fetchCloudPermissions === "function") window.App.fetchCloudPermissions();
     }
   </script>
 

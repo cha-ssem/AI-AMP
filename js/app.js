@@ -14,6 +14,7 @@ const App = {
   events: [],
   ledger: [],
   gallery: [],
+  permissions: null,
   initialBalance: 0,
   initialBalanceUpdatedAt: "",
   currentUserId: "mem-1301",
@@ -27,6 +28,7 @@ const App = {
     this.events = StorageService.getEvents();
     this.ledger = StorageService.getLedger();
     this.gallery = StorageService.getGallery();
+    this.permissions = StorageService.getPermissions();
     this.initialBalance = StorageService.getInitialBalance();
     this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
 
@@ -49,13 +51,14 @@ const App = {
     this.updateRoleUI();
     this.renderCurrentTab();
 
-    // 💡 Firebase Firestore 클라우드 DB의 최신 회원 데이터, 강의 커리큘럼, 네트워킹 행사, 장부, 갤러리 데이터 비동기 동기화
+    // 💡 Firebase Firestore 클라우드 DB의 최신 회원 데이터, 강의 커리큘럼, 네트워킹 행사, 장부, 갤러리, 등급별 권한 데이터 비동기 동기화
     setTimeout(() => {
       if (typeof this.fetchCloudMembers === "function") this.fetchCloudMembers();
       if (typeof this.fetchCloudLectures === "function") this.fetchCloudLectures();
       if (typeof this.fetchCloudEvents === "function") this.fetchCloudEvents();
       if (typeof this.fetchCloudLedger === "function") this.fetchCloudLedger();
       if (typeof this.fetchCloudGallery === "function") this.fetchCloudGallery();
+      if (typeof this.fetchCloudPermissions === "function") this.fetchCloudPermissions();
     }, 300);
   },
 
@@ -377,6 +380,78 @@ const App = {
     }
   },
 
+  /* 💡 Firestore 클라우드 DB에서 등급별 기능 접근 권한(RBAC) 동기화 */
+  async fetchCloudPermissions() {
+    if (!window.db || !window.FS || !window.FS.getDocs) return;
+
+    try {
+      // 1순위: settings/permissions 문서 시도
+      let cloudPermissions = null;
+      try {
+        const querySnapshot = await window.FS.getDocs(window.FS.collection(window.db, "settings"));
+        if (querySnapshot && !querySnapshot.empty) {
+          querySnapshot.forEach((docSnap) => {
+            if (docSnap.id === "permissions" || docSnap.id === "roles") {
+              cloudPermissions = docSnap.data();
+            }
+          });
+        }
+      } catch (e) {
+        // settings 컬렉션 권한 제한 시 ledger 컬렉션의 permissions_config 보조 조회
+      }
+
+      if (!cloudPermissions) {
+        try {
+          const ledgerSnapshot = await window.FS.getDocs(window.FS.collection(window.db, "ledger"));
+          if (ledgerSnapshot && !ledgerSnapshot.empty) {
+            ledgerSnapshot.forEach((docSnap) => {
+              if (docSnap.id === "permissions_config") {
+                const data = docSnap.data();
+                if (data && data.matrix) cloudPermissions = data.matrix;
+              }
+            });
+          }
+        } catch (e) {
+          // ignore fallback
+        }
+      }
+
+      if (cloudPermissions && typeof cloudPermissions === "object") {
+        const merged = { ...DEFAULT_PERMISSIONS };
+        Object.keys(DEFAULT_PERMISSIONS).forEach(feat => {
+          merged[feat] = { ...DEFAULT_PERMISSIONS[feat], ...(cloudPermissions[feat] || {}) };
+          merged[feat].admin = true; // 관리자는 항상 전체 권한 유지
+        });
+
+        this.permissions = merged;
+        StorageService.savePermissions(this.permissions);
+        console.log("✅ [Firestore] 등급별 기능 접근 권한(RBAC) 동기화 완료:", this.permissions);
+
+        this.updateRoleUI();
+        this.renderCurrentTab();
+      }
+    } catch (err) {
+      console.warn("Firestore 권한 데이터 로딩 예외 (로컬 Fallback 유지):", err);
+    }
+  },
+
+  /* 💡 등급별 기능 접근 권한 검사 (Dynamic Permission Checker) */
+  hasPermission(feature, role) {
+    const targetRole = role || this.currentRole || "guest";
+    // 👑 관리자(admin)는 모든 권한 항상 허용
+    if (targetRole === "admin") return true;
+
+    if (this.permissions && this.permissions[feature]) {
+      return !!this.permissions[feature][targetRole];
+    }
+
+    if (typeof DEFAULT_PERMISSIONS !== "undefined" && DEFAULT_PERMISSIONS[feature]) {
+      return !!DEFAULT_PERMISSIONS[feature][targetRole];
+    }
+
+    return false;
+  },
+
   // 💡 XSS(Cross-Site Scripting) 방어 헬퍼 함수
   escapeHtml(str) {
     if (str === null || str === undefined) return "";
@@ -473,15 +548,16 @@ const App = {
     const adminNavTab = document.getElementById("navAdminTab");
     const mobileNavAdminBtn = document.getElementById("mobileNavAdminBtn");
     const galleryAdminAddBtn = document.getElementById("galleryAdminAddBtn");
-    const isAdminOrExec = this.currentRole === "admin" || this.currentRole === "exec";
+    const canViewLedger = this.hasPermission("ledger_view") || this.currentRole === "admin" || this.currentRole === "exec";
+    const canManageGallery = this.hasPermission("gallery_manage");
 
-    // 일반회원, 정회원의 경우 관리자/장부 탭을 완벽히 숨김 (임원 및 관리자만 노출)
-    if (adminNavTab) adminNavTab.style.display = isAdminOrExec ? "block" : "none";
-    if (mobileNavAdminBtn) mobileNavAdminBtn.style.display = isAdminOrExec ? "flex" : "none";
-    if (galleryAdminAddBtn) galleryAdminAddBtn.style.display = isAdminOrExec ? "inline-flex" : "none";
+    // 장부 열람 권한이 있는 경우 관리자/장부 탭 노출
+    if (adminNavTab) adminNavTab.style.display = canViewLedger ? "block" : "none";
+    if (mobileNavAdminBtn) mobileNavAdminBtn.style.display = canViewLedger ? "flex" : "none";
+    if (galleryAdminAddBtn) galleryAdminAddBtn.style.display = canManageGallery ? "inline-flex" : "none";
 
-    // 권한이 일반회원 또는 정회원으로 하향된 상태에서 현재 탭이 admin 탭인 경우 홈 탭으로 자동 이동
-    if (!isAdminOrExec && this.currentTab === "admin") {
+    // 권한이 하향된 상태에서 현재 탭이 admin 탭인 경우 홈 탭으로 자동 이동
+    if (!canViewLedger && this.currentTab === "admin") {
       this.switchTab("home");
     }
 
@@ -499,7 +575,7 @@ const App = {
         const userName = currentUser ? currentUser.name : "원우";
         
         if (topNavUserWelcomeText) {
-          topNavUserWelcomeText.innerHTML = `👋 ${this.escapeHtml(userName)}님!<br/><span style="font-weight: 500; font-size: 12px; color: var(--color-on-dark-mute, #94a3b8);">반갑습니다</span>`;
+          topNavUserWelcomeText.innerHTML = `👋 ${this.escapeHtml(userName)}님! 반갑습니다`;
           topNavUserWelcomeText.style.display = "inline-block";
         }
         
@@ -510,9 +586,9 @@ const App = {
   },
 
   switchTab(tab) {
-    // 일반회원 및 정회원은 관리자/장부 탭 접근 불가능 (임원/관리자만 접근 가능)
-    if (tab === "admin" && (this.currentRole === "regular" || this.currentRole === "full")) {
-      this.showToast("🔒 관리자 & 회계 장부 탭은 임원 및 관리자 전용 권한입니다.");
+    // 회계 장부 열람 권한 검사
+    if (tab === "admin" && !this.hasPermission("ledger_view") && this.currentRole !== "admin" && this.currentRole !== "exec") {
+      this.showToast("🔒 관리자 & 회계 장부 탭 접근 권한이 없습니다.");
       return;
     }
 
@@ -640,18 +716,20 @@ const App = {
 
     if (!container) return;
 
-    // 미가입 비회원(guest) 또는 일반회원(regular)일 경우 정회원 디렉토리 열람 차단 및 안내 카드 노출
-    if (this.currentRole === "guest" || this.currentRole === "regular") {
+    const canViewMembers = this.hasPermission("members_view");
+
+    // 동적 권한 검사: 권한이 없으면 안내 카드 노출
+    if (!canViewMembers) {
       container.style.display = "none";
       if (controlBar) controlBar.style.display = "none";
       if (restrictedCard) restrictedCard.style.display = "block";
 
       const regBtn = document.getElementById("restrictedRegisterBtn");
       if (regBtn) {
-        if (this.currentRole === "regular") {
-          regBtn.style.display = "none"; // 이미 가입한 일반 회원은 '회원가입 및 로그인하기' 단추 숨김
-        } else {
+        if (this.currentRole === "guest") {
           regBtn.style.display = "inline-flex"; // 비회원(guest)에게만 표출
+        } else {
+          regBtn.style.display = "none"; // 이미 가입한 회원은 가입단추 숨김
         }
       }
       return;
@@ -774,7 +852,8 @@ const App = {
     const container = document.getElementById("scheduleListContainer");
     if (!container) return;
 
-    const isExecOrAdmin = this.currentRole === "exec" || this.currentRole === "admin";
+    const canManageCurriculum = this.hasPermission("curriculum_manage");
+    const canDownloadCurriculum = this.hasPermission("curriculum_download");
 
     // 강의 및 네트워킹 행사 통합 리스트 구성
     const combined = [];
@@ -826,7 +905,7 @@ const App = {
               <div style="flex: 1 1 340px;">
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
                   <span class="pill-tag-nvidia">WEEK ${l.week}</span>
-                  ${isExecOrAdmin ? `
+                  ${canManageCurriculum ? `
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px;" onclick="App.openEditLectureModal(${l.week})">
                         ✏️ 수정
@@ -861,11 +940,11 @@ const App = {
               <!-- 2열 (오른쪽): DOWNLOAD MATERIAL 및 액션 단추 -->
               <div style="display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 8px; flex-shrink: 0; min-width: 180px;">
                 ${(l.materialUrl && l.materialUrl.trim() !== '') ? `
-                  <button class="btn btn-outline btn-sm" style="padding: 9px 16px; font-size: 13px; font-weight: 700; width: 100%; max-width: 200px; justify-content: center;" onclick="App.downloadMaterial('${this.escapeHtml(l.title)}', '${this.escapeHtml(l.materialUrl)}')">
+                  <button class="btn btn-outline btn-sm" style="padding: 9px 16px; font-size: 13px; font-weight: 700; width: 100%; max-width: 200px; justify-content: center;" onclick="${canDownloadCurriculum ? `App.downloadMaterial('${this.escapeHtml(l.title)}', '${this.escapeHtml(l.materialUrl)}')` : `App.showToast('🔒 강의 교안 다운로드는 정회원 전용 권한입니다.')`}">
                     📁 DOWNLOAD MATERIAL
                   </button>
                 ` : ''}
-                ${isExecOrAdmin ? `
+                ${canManageCurriculum ? `
                   <button class="btn btn-primary btn-sm" style="padding: 7px 14px; font-size: 12px; width: 100%; max-width: 200px; justify-content: center;" onclick="App.shareToKakao(${l.week})">
                     💬 KAKAO SHARE TEXT
                   </button>
@@ -892,7 +971,7 @@ const App = {
                   <span style="font-size: 11.5px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.15); padding: 3px 8px; border-radius: 4px; border: 1px solid rgba(245, 158, 11, 0.35);">
                     ${ev.cohort || 13}기 특별 행사
                   </span>
-                  ${isExecOrAdmin ? `
+                  ${canManageCurriculum ? `
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #f59e0b; color: #f59e0b;" onclick="App.openEditNetworkingEventModal('${ev.id}')">
                         ✏️ 수정
@@ -936,7 +1015,7 @@ const App = {
                 <button class="btn btn-sm" style="padding: 9px 16px; font-size: 12.5px; font-weight: 700; width: 100%; max-width: 210px; justify-content: center; background: #fee500; color: #191919; border: 1px solid #fee500; box-shadow: 0 2px 8px rgba(254, 229, 0, 0.25);" onclick="App.shareEventToKakao('${ev.id}')">
                   💬 카카오톡 행사 안내 공유
                 </button>
-                ${isExecOrAdmin ? `
+                ${canManageCurriculum ? `
                   <button class="btn btn-outline btn-sm" style="padding: 8px 14px; font-size: 12px; font-weight: 700; width: 100%; max-width: 210px; justify-content: center; border-color: #f59e0b; color: #f59e0b; background: rgba(245, 158, 11, 0.1);" onclick="App.shareEventSurveyToKakao('${ev.id}')" title="카카오톡 단톡방 참석 여부 투표 및 설문조사용 공지문구를 복사합니다">
                     📋 카톡 설문/투표 문구 복사
                   </button>
@@ -1934,6 +2013,17 @@ const App = {
 
   /* 5. ADMIN & LEDGER TAB */
   renderAdmin() {
+    // 🛡️ 1. 최고 관리자(admin) 전용 권한 관리 대시보드 노출 제어
+    const permSection = document.getElementById("adminPermissionsSection");
+    if (permSection) {
+      if (this.currentRole === "admin") {
+        permSection.style.display = "block";
+        this.renderPermissionsMatrix();
+      } else {
+        permSection.style.display = "none";
+      }
+    }
+
     const tableBody = document.getElementById("adminMemberTableBody");
     if (!tableBody) return;
 
@@ -1996,6 +2086,154 @@ const App = {
     if (typeof this.fetchCloudLedger === "function") {
       this.fetchCloudLedger();
     }
+  },
+
+  /* 🛡️ 회원 등급별 기능 접근 권한 매트릭스 렌더링 (관리자 전용) */
+  renderPermissionsMatrix() {
+    const tbody = document.getElementById("permissionsMatrixBody");
+    if (!tbody) return;
+
+    if (this.currentRole !== "admin") {
+      tbody.innerHTML = `<tr><td colspan="6" style="padding: 24px; color: var(--color-mute);">🔒 최고 관리자(admin) 권한으로 접속해야 권한 매트릭스를 확인 및 변경할 수 있습니다.</td></tr>`;
+      return;
+    }
+
+    const features = typeof PERMISSION_FEATURES !== "undefined" ? PERMISSION_FEATURES : [
+      { key: "members_view", name: "👥 원우 디렉토리 열람", desc: "Members 메뉴에서 전체 회원 프로필/연락처/업종 정보 열람" },
+      { key: "curriculum_download", name: "📁 강의 교안(PDF) 다운로드", desc: "Curriculum 메뉴에서 강의 교안 파일 다운로드 버튼 활성화" },
+      { key: "curriculum_manage", name: "📅 강의 & 행사 일정 관리", desc: "강의 커리큘럼 및 네트워킹 행사 등록·수정·삭제 및 카톡공유" },
+      { key: "gallery_view", name: "📸 갤러리 스토리 & 사진 열람", desc: "Gallery 메뉴의 행사 기록, 현장 사진 및 인포그래픽 고화질 확대보기" },
+      { key: "gallery_manage", name: "✍️ 갤러리 게시글 등록·관리", desc: "새 행사 이야기 및 사진 등록, 세부내용 수정 및 삭제" },
+      { key: "ledger_view", name: "💰 회계 장부 열람", desc: "Admin & Ledger 메뉴 접근 및 찬조/회식 장부 내역과 잔액 열람" },
+      { key: "ledger_manage", name: "⚙️ 회계 장부 및 이월잔고 관리", desc: "수입/지출 내역 등록·수정, 영수증 관리 및 초기 이월잔고 설정" }
+    ];
+
+    const roles = ["guest", "regular", "full", "exec", "admin"];
+
+    tbody.innerHTML = features.map(feat => {
+      return `
+        <tr>
+          <td style="text-align: left; padding: 12px 16px;">
+            <div style="font-weight: 700; color: var(--color-ink); font-size: 13.5px; margin-bottom: 2px;">${this.escapeHtml(feat.name)}</div>
+            <div style="font-size: 11.5px; color: var(--color-mute); line-height: 1.35;">${this.escapeHtml(feat.desc)}</div>
+          </td>
+          ${roles.map(r => {
+            const isChecked = this.hasPermission(feat.key, r);
+            const isAdminCol = r === "admin";
+
+            return `
+              <td style="text-align: center; vertical-align: middle; padding: 8px;">
+                <label style="cursor: ${isAdminCol ? 'not-allowed' : 'pointer'}; display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; margin: 0;">
+                  <input type="checkbox" 
+                         class="perm-matrix-checkbox" 
+                         data-feature="${feat.key}" 
+                         data-role="${r}" 
+                         ${isChecked ? 'checked' : ''} 
+                         ${isAdminCol ? 'disabled title="관리자는 항상 모든 권한이 허용됩니다"' : ''}
+                         style="width: 18px; height: 18px; cursor: ${isAdminCol ? 'not-allowed' : 'pointer'}; accent-color: #6366f1;" />
+                </label>
+              </td>
+            `;
+          }).join("")}
+        </tr>
+      `;
+    }).join("");
+  },
+
+  /* 🛡️ 권한 설정 저장 및 클라우드 동기화 */
+  async savePermissions(e) {
+    if (e) e.preventDefault();
+
+    if (this.currentRole !== "admin") {
+      this.showToast("🔒 등급별 기능 접근 권한 관리는 최고 관리자(admin)만 수행할 수 있습니다.");
+      return;
+    }
+
+    const checkboxes = document.querySelectorAll(".perm-matrix-checkbox");
+    if (!checkboxes || checkboxes.length === 0) {
+      this.showToast("⚠️ 저장할 권한 매트릭스 항목이 없습니다.");
+      return;
+    }
+
+    const newPermissions = { ...DEFAULT_PERMISSIONS };
+    // 기본 구조 초기화
+    Object.keys(DEFAULT_PERMISSIONS).forEach(feat => {
+      newPermissions[feat] = { ...DEFAULT_PERMISSIONS[feat] };
+    });
+
+    checkboxes.forEach(cb => {
+      const feat = cb.dataset.feature;
+      const role = cb.dataset.role;
+      if (feat && role) {
+        if (!newPermissions[feat]) newPermissions[feat] = {};
+        newPermissions[feat][role] = cb.checked;
+      }
+    });
+
+    // 관리자(admin) 권한은 안전을 위해 무조건 true 강제 보장
+    Object.keys(newPermissions).forEach(feat => {
+      newPermissions[feat].admin = true;
+    });
+
+    this.permissions = newPermissions;
+    StorageService.savePermissions(this.permissions);
+
+    // 💡 Firebase Firestore 클라우드 DB에 실시간 저장 (settings 컬렉션 및 ledger 컬렉션 보조 동기화)
+    if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+      try {
+        await window.FS.setDoc(window.FS.doc(window.db, "settings", "permissions"), this.permissions, { merge: true });
+      } catch (err) {
+        console.warn("Firestore settings/permissions 저장 시도 (보조 ledger로 계속 진행):", err);
+      }
+
+      try {
+        await window.FS.setDoc(window.FS.doc(window.db, "ledger", "permissions_config"), {
+          matrix: this.permissions,
+          updatedAt: new Date().toISOString(),
+          updatedBy: this.currentUserId || "admin"
+        }, { merge: true });
+        console.log("✅ [Firestore] 등급별 기능 접근 권한(RBAC) 동기화 완료");
+      } catch (err) {
+        console.warn("Firestore ledger/permissions_config 저장 시도 예외:", err);
+      }
+    }
+
+    this.showToast("🎉 회원 등급별 기능 접근 권한이 성공적으로 저장 및 클라우드 동기화되었습니다!");
+    this.updateRoleUI();
+    this.renderCurrentTab();
+  },
+
+  /* 🛡️ 권한 설정 기본값으로 초기화 */
+  async resetPermissionsToDefault() {
+    if (this.currentRole !== "admin") {
+      this.showToast("🔒 최고 관리자(admin)만 권한 설정을 초기화할 수 있습니다.");
+      return;
+    }
+
+    if (!confirm("모든 등급별 기능 접근 권한을 시스템 초기 기본값으로 복원하시겠습니까?")) {
+      return;
+    }
+
+    this.permissions = JSON.parse(JSON.stringify(DEFAULT_PERMISSIONS));
+    StorageService.savePermissions(this.permissions);
+
+    if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+      try {
+        await window.FS.setDoc(window.FS.doc(window.db, "settings", "permissions"), this.permissions, { merge: true });
+        await window.FS.setDoc(window.FS.doc(window.db, "ledger", "permissions_config"), {
+          matrix: this.permissions,
+          updatedAt: new Date().toISOString(),
+          updatedBy: this.currentUserId || "admin"
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Firestore 권한 초기화 동기화 시도:", err);
+      }
+    }
+
+    this.showToast("🔄 등급별 접근 권한이 기본 설정값으로 복원되었습니다.");
+    this.renderPermissionsMatrix();
+    this.updateRoleUI();
+    this.renderCurrentTab();
   },
 
   toggleSelectAllMembers(isChecked) {
@@ -3419,20 +3657,22 @@ const App = {
     const restrictedCard = document.getElementById("guestGalleryRestrictedCard");
     const contentContainer = document.getElementById("galleryMainContentContainer");
     const adminAddBtn = document.getElementById("galleryAdminAddBtn");
-    const isAdminOrExec = this.currentRole === "admin" || this.currentRole === "exec";
+    
+    const canViewGallery = this.hasPermission("gallery_view");
+    const canManageGallery = this.hasPermission("gallery_manage");
 
-    // 💡 1. 미가입 비회원(guest)인 경우 열람 제한 및 회원가입 안내 카드 노출
-    if (this.currentRole === "guest") {
+    // 💡 1. 갤러리 열람 권한이 없는 경우(비회원 등) 제한 안내 카드 노출
+    if (!canViewGallery) {
       if (restrictedCard) restrictedCard.style.display = "block";
       if (contentContainer) contentContainer.style.display = "none";
       if (adminAddBtn) adminAddBtn.style.display = "none";
       return;
     }
 
-    // 💡 2. 가입된 회원(regular, full, exec, admin)인 경우 갤러리 열람 허용
+    // 💡 2. 갤러리 열람 권한이 있는 경우 컨텐츠 노출
     if (restrictedCard) restrictedCard.style.display = "none";
     if (contentContainer) contentContainer.style.display = "block";
-    if (adminAddBtn) adminAddBtn.style.display = isAdminOrExec ? "inline-flex" : "none";
+    if (adminAddBtn) adminAddBtn.style.display = canManageGallery ? "inline-flex" : "none";
 
     const listContainer = document.getElementById("galleryAccordionList");
     if (!listContainer) return;
@@ -3457,7 +3697,7 @@ const App = {
         <div class="product-card" style="text-align: center; padding: 48px 20px; color: var(--color-mute);">
           <div style="font-size: 38px; margin-bottom: 12px;">📷</div>
           <div style="font-size: 16px; font-weight: 700; color: var(--color-ink); margin-bottom: 6px;">조건에 해당하는 행사 갤러리가 없습니다.</div>
-          <div style="font-size: 13.5px;">${isAdminOrExec ? "Curriculum 메뉴에서 '📸 Gallery 등록'을 누르거나 상단 등록 버튼을 이용해 소중한 강의/행사 기록을 공유해보세요!" : "새로운 강의 및 행사 기록이 등록되면 이곳에서 확인하실 수 있습니다."}</div>
+          <div style="font-size: 13.5px;">${canManageGallery ? "Curriculum 메뉴에서 '📸 Gallery 등록'을 누르거나 상단 등록 버튼을 이용해 소중한 강의/행사 기록을 공유해보세요!" : "새로운 강의 및 행사 기록이 등록되면 이곳에서 확인하실 수 있습니다."}</div>
         </div>
       `;
       return;
@@ -3645,8 +3885,8 @@ const App = {
 
   /* 갤러리 등록 모달 (일반 신규) */
   openGalleryModal() {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 등록 및 관리는 관리자 모드(임원/관리자)에서만 가능합니다.");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 등록 및 관리 권한이 없습니다.");
       return;
     }
 
@@ -3688,8 +3928,8 @@ const App = {
 
   /* 💡 Curriculum 각 주차별 카드에서 'Gallery 등록' 클릭 시 자동 프리필 */
   openGalleryModalFromLecture(week) {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 등록은 관리자 모드(임원/관리자)에서만 가능합니다.");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 등록 및 관리 권한이 없습니다.");
       return;
     }
 
@@ -3759,8 +3999,8 @@ ${l.description || '강의의 핵심 인사이트와 현장에서 나눈 생생�
 
   /* 💡 네트워킹 행사 카드에서 'Gallery 등록' 클릭 시 자동 프리필 */
   openGalleryModalFromEvent(eventId) {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 등록은 관리자 모드(임원/관리자)에서만 가능합니다.");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 등록 및 관리 권한이 없습니다.");
       return;
     }
 
@@ -3825,8 +4065,8 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
 
   /* 💡 갤러리 세부 내용 수정 모달 오픈 */
   openEditGalleryModal(id) {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 수정은 관리자 모드(임원/관리자)에서만 가능합니다.");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 수정 및 관리 권한이 없습니다.");
       return;
     }
 
@@ -4000,8 +4240,8 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
   async saveGalleryEntry(e) {
     if (e) e.preventDefault();
 
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 등록 및 수정 권한이 없습니다 (관리자/임원 전용).");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 등록 및 수정 권한이 없습니다.");
       return;
     }
 
@@ -4100,8 +4340,8 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
   },
 
   async deleteGalleryItem(id) {
-    if (this.currentRole !== "admin" && this.currentRole !== "exec") {
-      this.showToast("🔒 갤러리 삭제 권한이 없습니다 (관리자/임원 전용).");
+    if (!this.hasPermission("gallery_manage")) {
+      this.showToast("🔒 갤러리 삭제 권한이 없습니다.");
       return;
     }
 
