@@ -3461,7 +3461,7 @@ const App = {
         <td style="white-space: nowrap;">
           <strong style="color: #4338ca;">13기 초기 이월금</strong>
         </td>
-        <td>
+        <td style="white-space: nowrap;">
           <span style="color: var(--color-ink);">기초 잔고 설정액 (기수 이월)</span>
         </td>
         <td style="font-weight: 700; color: #4f46e5; white-space: nowrap;">
@@ -3550,7 +3550,7 @@ const App = {
             <strong>${this.escapeHtml(item.name || '미지정')}</strong>
             ${item.location && item.location !== '-' ? `<br><span style="font-size: 11.5px; color: var(--color-mute);">📍 ${this.escapeHtml(item.location)}</span>` : ''}
           </td>
-          <td>
+          <td style="white-space: nowrap;">
             ${this.escapeHtml(item.item || '내역 미기재')}
             ${item.attendees && item.attendees !== '-' ? ` <span style="font-size: 11.5px; color: #4f46e5; font-weight: 700;">(👥 ${this.escapeHtml(item.attendees)})</span>` : ''}
           </td>
