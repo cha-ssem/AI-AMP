@@ -4124,23 +4124,27 @@ const App = {
       let youtubeCardHtml = "";
       if (youtubeVideoId) {
         youtubeCardHtml = `
-          <div style="padding: 16px; background: rgba(239, 68, 68, 0.04); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 6px;">
+          <div style="padding: 16px; background: rgba(239, 68, 68, 0.04); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
               <span style="background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);">
                 🎬 강의 관련 영상 (YouTube)
               </span>
               <a href="https://www.youtube.com/watch?v=${youtubeVideoId}" target="_blank" rel="noopener noreferrer" 
-                 style="font-size: 11.5px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"
+                 style="font-size: 12px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; padding: 3px 10px; border-radius: 4px; border: 1px solid #fca5a5;"
                  onclick="event.stopPropagation()">
-                🔗 YouTube에서 열기 ↗
+                ▶️ YouTube에서 시청하기 ↗
               </a>
             </div>
             <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-              <iframe src="https://www.youtube-nocookie.com/embed/${youtubeVideoId}?rel=0" 
+              <iframe src="https://www.youtube.com/embed/${youtubeVideoId}" 
                       title="${this.escapeHtml(item.title)} 관련 영상" 
                       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                      referrerpolicy="strict-origin-when-cross-origin"
                       allowfullscreen></iframe>
+            </div>
+            <div style="font-size: 11px; color: var(--color-mute); text-align: right;">
+              * 영상이 재생되지 않을 경우 상단 '▶️ YouTube에서 시청하기' 버튼을 클릭해주세요.
             </div>
           </div>
         `;
@@ -4335,9 +4339,10 @@ const App = {
             </button>
           </div>
           <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #000;">
-            <iframe src="https://www.youtube-nocookie.com/embed/${videoId}" 
+            <iframe src="https://www.youtube.com/embed/${videoId}" 
                     style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    referrerpolicy="strict-origin-when-cross-origin"
                     allowfullscreen></iframe>
           </div>
         </div>
