@@ -4118,33 +4118,51 @@ const App = {
 
       // 1. 강의 내용 인포그래픽 & YouTube 영상 듀얼 렌더링
       const youtubeVideoId = this.extractYoutubeVideoId(item.youtubeUrl || item.videoUrl || (item.category === "특강/세미나" ? this.DEFAULT_GALLERY_YOUTUBE_URL : ""));
+      const targetYtUrl = item.youtubeUrl || item.videoUrl || (item.category === "특강/세미나" ? this.DEFAULT_GALLERY_YOUTUBE_URL : "");
       let mediaSectionHtml = "";
 
-      // 1-A. YouTube 영상 HTML 템플릿
+      // 1-A. YouTube 영상 / 센터 소개 미디어 HTML 템플릿 (DEU_AI_grandICT_center.jpg 적용)
       let youtubeCardHtml = "";
-      if (youtubeVideoId) {
+      if (targetYtUrl || youtubeVideoId || item.category === "특강/세미나") {
+        const fullWatchUrl = youtubeVideoId ? `https://www.youtube.com/watch?v=${youtubeVideoId}` : (targetYtUrl || this.DEFAULT_GALLERY_YOUTUBE_URL);
         youtubeCardHtml = `
           <div style="padding: 16px; background: rgba(239, 68, 68, 0.04); border: 1.5px solid rgba(239, 68, 68, 0.3); border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; gap: 10px;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px;">
               <span style="background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);">
-                🎬 강의 관련 영상 (YouTube)
+                🎬 강의 관련 영상 (동의대 AI그랜드ICT센터)
               </span>
-              <a href="https://www.youtube.com/watch?v=${youtubeVideoId}" target="_blank" rel="noopener noreferrer" 
-                 style="font-size: 12px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; padding: 3px 10px; border-radius: 4px; border: 1px solid #fca5a5;"
+              <a href="${this.escapeHtml(fullWatchUrl)}" target="_blank" rel="noopener noreferrer" 
+                 style="font-size: 12px; color: #dc2626; font-weight: 700; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; background: #fee2e2; padding: 3px 10px; border-radius: 4px; border: 1px solid #fca5a5; transition: background 0.2s;"
                  onclick="event.stopPropagation()">
                 ▶️ YouTube에서 시청하기 ↗
               </a>
             </div>
-            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-              <iframe src="https://www.youtube.com/embed/${youtubeVideoId}" 
-                      title="${this.escapeHtml(item.title)} 관련 영상" 
-                      style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                      referrerpolicy="strict-origin-when-cross-origin"
-                      allowfullscreen></iframe>
+            
+            <!-- DEU_AI_grandICT_center 대표 썸네일 & YouTube 플레이어 오버레이 -->
+            <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 8px; overflow: hidden; background: #0f172a; box-shadow: 0 4px 14px rgba(0,0,0,0.18); cursor: pointer;"
+                 title="클릭 시 YouTube 영상으로 바로 연결됩니다"
+                 onclick="event.stopPropagation(); window.open('${this.escapeHtml(fullWatchUrl)}', '_blank')">
+              <img src="images/DEU_AI_grandICT_center.jpg" alt="동의대학교 인공지능그랜드ICT연구센터" 
+                   style="width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.35s ease;"
+                   onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'" />
+              
+              <!-- 다크 그라데이션 및 중앙 재생 버튼 오버레이 -->
+              <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.4) 55%, rgba(0,0,0,0.85) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; text-align: center; pointer-events: none;">
+                <div style="width: 58px; height: 42px; background: #ff0000; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(255,0,0,0.6); margin-bottom: 8px;">
+                  <div style="width: 0; height: 0; border-top: 9px solid transparent; border-bottom: 9px solid transparent; border-left: 15px solid #ffffff; margin-left: 3px;"></div>
+                </div>
+                <div style="color: #ffffff; font-size: 14px; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.8);">
+                  동의대학교 인공지능그랜드ICT연구센터
+                </div>
+                <div style="color: #e2e8f0; font-size: 11.5px; margin-top: 4px; background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 4px;">
+                  💡 클릭 시 YouTube 공식 영상으로 연결됩니다
+                </div>
+              </div>
             </div>
-            <div style="font-size: 11px; color: var(--color-mute); text-align: right;">
-              * 영상이 재생되지 않을 경우 상단 '▶️ YouTube에서 시청하기' 버튼을 클릭해주세요.
+
+            <div style="font-size: 11.5px; color: var(--color-mute); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+              <span>🏛️ 동의대학교 인공지능그랜드ICT연구센터</span>
+              <span style="color: #dc2626; font-weight: 600;">클릭 시 새 창에서 재생 ↗</span>
             </div>
           </div>
         `;
@@ -4327,23 +4345,33 @@ const App = {
     const val = input.value.trim();
     const videoId = this.extractYoutubeVideoId(val);
 
-    if (videoId) {
+    if (videoId || val) {
+      const fullWatchUrl = videoId ? `https://www.youtube.com/watch?v=${videoId}` : val;
       container.style.display = "block";
       container.innerHTML = `
-        <div style="background: var(--color-surface); border: 1px solid #ef4444; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; gap: 6px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #dc2626; font-weight: 700;">
-            <span>🎬 영상 연결 완료 (ID: ${videoId})</span>
+        <div style="background: var(--color-surface); border: 1.5px solid #ef4444; border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #dc2626; font-weight: 700;">
+            <span>🎬 영상 연결 완료 ${videoId ? `(ID: ${videoId})` : ''}</span>
             <button type="button" onclick="document.getElementById('galleryYoutubeInput').value=''; App.previewGalleryYoutube();" 
-                    style="background: none; border: none; color: var(--color-mute); font-size: 11px; cursor: pointer; text-decoration: underline;">
-              지우기
+                    style="background: none; border: none; color: var(--color-mute); font-size: 11.5px; cursor: pointer; text-decoration: underline;">
+              초기화
             </button>
           </div>
-          <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #000;">
-            <iframe src="https://www.youtube.com/embed/${videoId}" 
-                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                    referrerpolicy="strict-origin-when-cross-origin"
-                    allowfullscreen></iframe>
+          <div style="position: relative; width: 100%; aspect-ratio: 16 / 9; border-radius: 6px; overflow: hidden; background: #0f172a; box-shadow: 0 2px 8px rgba(0,0,0,0.15); cursor: pointer;"
+               onclick="window.open('${this.escapeHtml(fullWatchUrl)}', '_blank')">
+            <img src="images/DEU_AI_grandICT_center.jpg" alt="동의대학교 인공지능그랜드ICT연구센터" 
+                 style="width: 100%; height: 100%; object-fit: cover; display: block;" />
+            <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.7) 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;">
+              <div style="width: 48px; height: 34px; background: #ff0000; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(255,0,0,0.5); margin-bottom: 6px;">
+                <div style="width: 0; height: 0; border-top: 7px solid transparent; border-bottom: 7px solid transparent; border-left: 12px solid #ffffff; margin-left: 2px;"></div>
+              </div>
+              <div style="color: #ffffff; font-size: 12.5px; font-weight: 700;">
+                동의대학교 인공지능그랜드ICT연구센터
+              </div>
+              <div style="color: #cbd5e1; font-size: 11px; margin-top: 2px;">
+                클릭 시 YouTube 새 창에서 즉시 재생
+              </div>
+            </div>
           </div>
         </div>
       `;
