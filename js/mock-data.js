@@ -432,6 +432,19 @@ class StorageService {
     }
   }
 
+  /* 💡 세션 만료(30분 자동 로그아웃) 시간 관리 */
+  static getLastActiveTime() {
+    return localStorage.getItem("enterprise_last_active_time") || "";
+  }
+
+  static setLastActiveTime(time) {
+    if (time) {
+      localStorage.setItem("enterprise_last_active_time", time.toString());
+    } else {
+      localStorage.removeItem("enterprise_last_active_time");
+    }
+  }
+
   /* 💡 회원 등급별 동적 권한(RBAC) 스토리지 관리 */
   static getPermissions() {
     const data = localStorage.getItem("enterprise_13th_permissions");

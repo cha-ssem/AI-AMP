@@ -21,6 +21,9 @@ const App = {
   currentGalleryCategory: "all",
   activeGalleryId: null,
   tempGalleryPhotos: [],
+  SESSION_TIMEOUT_MS: 30 * 60 * 1000, // 30분 세션 유효시간
+  _lastActiveUpdate: 0,
+  _sessionInterval: null,
 
   init() {
     this.members = StorageService.getMembers();
@@ -32,24 +35,46 @@ const App = {
     this.initialBalance = StorageService.getInitialBalance();
     this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
 
-    // 브라우저 새로고침 시에도 사용자의 세션(로그인 또는 로그아웃 상태) 100% 완벽 보존
+    // 브라우저 새로고침 및 재접속 시 세션(로그인 또는 로그아웃 상태) 및 30분 유효기간 검증
     const savedUserId = StorageService.getCurrentUserId();
     const savedRole = StorageService.getCurrentUserRole();
+    const lastActive = StorageService.getLastActiveTime();
+    const now = Date.now();
 
+    let sessionExpired = false;
     if (savedUserId && savedRole !== "guest") {
-      this.currentUserId = savedUserId;
-      this.currentRole = savedRole;
+      if (lastActive && (now - parseInt(lastActive, 10)) > this.SESSION_TIMEOUT_MS) {
+        // 💡 마지막 접속/활동 시간으로부터 30분 초과 시 자동 로그아웃 처리
+        sessionExpired = true;
+        this.currentUserId = null;
+        this.currentRole = "guest";
+        StorageService.setCurrentUserRole("guest");
+        StorageService.setCurrentUserId("");
+        StorageService.setLastActiveTime("");
+      } else {
+        this.currentUserId = savedUserId;
+        this.currentRole = savedRole;
+        StorageService.setLastActiveTime(now);
+      }
     } else {
       // 💡 로그아웃 상태일 때 임의 회원으로 재로그인되지 않도록 guest 세션 엄격 고정!
       this.currentUserId = null;
       this.currentRole = "guest";
       StorageService.setCurrentUserRole("guest");
       StorageService.setCurrentUserId("");
+      StorageService.setLastActiveTime("");
     }
 
     this.bindEvents();
     this.updateRoleUI();
     this.renderCurrentTab();
+    this.startSessionTimer();
+
+    if (sessionExpired) {
+      setTimeout(() => {
+        this.showToast("⏰ 로그인 세션이 만료(30분 경과)되어 자동으로 로그아웃되었습니다.");
+      }, 500);
+    }
 
     // 💡 Firebase Firestore 클라우드 DB의 최신 회원 데이터, 강의 커리큘럼, 네트워킹 행사, 장부, 갤러리, 등급별 권한 데이터 비동기 동기화
     setTimeout(() => {
@@ -504,15 +529,68 @@ const App = {
   setRole(role) {
     this.currentRole = role;
     StorageService.setCurrentUserRole(role);
+    if (role !== "guest") {
+      StorageService.setLastActiveTime(Date.now());
+    } else {
+      StorageService.setLastActiveTime("");
+    }
     this.updateRoleUI();
     this.showToast(`사용자 등급이 '${this.getRoleName(role)}'(으)로 전환되었습니다.`);
     this.renderCurrentTab();
   },
 
-  logout() {
+  /* 💡 사용자 활동 감지 및 세션 타임스탬프 갱신 (쓰로틀링) */
+  touchSession() {
+    if (this.currentRole === "guest" || !this.currentUserId) return;
+    const now = Date.now();
+    if (now - this._lastActiveUpdate > 5000) {
+      this._lastActiveUpdate = now;
+      StorageService.setLastActiveTime(now);
+    }
+  },
+
+  /* 💡 30분 세션 만료 여부 정기 검사 */
+  checkSessionTimeout() {
+    if (this.currentRole === "guest" || !this.currentUserId) return;
+    const lastActive = StorageService.getLastActiveTime();
+    if (!lastActive) {
+      StorageService.setLastActiveTime(Date.now());
+      return;
+    }
+    const elapsed = Date.now() - parseInt(lastActive, 10);
+    if (elapsed > this.SESSION_TIMEOUT_MS) {
+      this.logout(true);
+    }
+  },
+
+  /* 💡 세션 타이머 및 모바일/PC 통합 활동 리스너 등록 */
+  startSessionTimer() {
+    if (this._sessionInterval) clearInterval(this._sessionInterval);
+    this._sessionInterval = setInterval(() => {
+      this.checkSessionTimeout();
+    }, 15000); // 15초 주기로 타임아웃 검사
+
+    // 💡 모바일 터치 및 PC 인터랙션 감지하여 세션 시간 갱신
+    const activityEvents = ["mousedown", "keydown", "scroll", "touchstart", "pointerdown"];
+    activityEvents.forEach(evt => {
+      window.addEventListener(evt, () => this.touchSession(), { passive: true });
+    });
+
+    // 💡 모바일에서 백그라운드 전환 후 복귀(앱 전환, 화면 켜짐 등) 시 세션 만료 즉시 검사
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        this.checkSessionTimeout();
+      }
+    });
+    window.addEventListener("focus", () => this.checkSessionTimeout());
+    window.addEventListener("pageshow", () => this.checkSessionTimeout());
+  },
+
+  logout(isSessionExpired = false) {
     this.currentUserId = null;
     StorageService.setCurrentUserId("");
     StorageService.setCurrentUserRole("guest");
+    StorageService.setLastActiveTime("");
     this.currentRole = "guest";
 
     // 💡 Firebase Auth 구글 소셜 로그인 인증 세션도 완전 해제
@@ -525,7 +603,11 @@ const App = {
     }
 
     this.updateRoleUI();
-    this.showToast("🚪 안전하게 로그아웃되었습니다. 비회원 접속 상태로 전환됩니다.");
+    if (isSessionExpired) {
+      this.showToast("⏰ 30분 동안 활동이 없어 세션이 만료되었습니다. 안전하게 로그아웃되었습니다.");
+    } else {
+      this.showToast("🚪 안전하게 로그아웃되었습니다. 비회원 접속 상태로 전환됩니다.");
+    }
     this.switchTab("home");
   },
 
@@ -566,14 +648,14 @@ const App = {
       this.switchTab("home");
     }
 
-    // 상단 우측 인사말 텍스트 & 버튼: 비회원 시 '📝 회원가입하기 →', 로그인 시 '👋 [회원명]님! 반갑습니다' 텍스트 + '🚪 로그아웃하기' 버튼
+    // 상단 우측 인사말 텍스트 & 버튼: 비회원 시 '📝 회원가입/로그인', 로그인 시 '👋 [회원명]님! 반갑습니다' 텍스트 + '🚪 로그아웃하기' 버튼
     const topNavUserBtn = document.getElementById("topNavUserBtn");
     const topNavUserWelcomeText = document.getElementById("topNavUserWelcomeText");
 
     if (topNavUserBtn) {
       if (this.currentRole === "guest") {
         if (topNavUserWelcomeText) topNavUserWelcomeText.style.display = "none";
-        topNavUserBtn.textContent = "📝 회원가입하기 →";
+        topNavUserBtn.textContent = "📝 회원가입/로그인";
         topNavUserBtn.onclick = () => this.openRegisterModal();
       } else {
         const currentUser = this.members.find(m => m.id === this.currentUserId) || this.members[0];
