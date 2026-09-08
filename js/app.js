@@ -766,7 +766,7 @@ const App = {
     if (homeStats) {
       homeStats.innerHTML = `
         <div>
-          <div class="stat-num-nvidia">13TH</div>
+          <div class="stat-num-nvidia">2ND</div>
           <div class="stat-label-nvidia">CURRENT EDITION</div>
         </div>
         <div>
