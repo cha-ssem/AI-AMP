@@ -810,7 +810,7 @@ const App = {
     const homeLectureBox = document.getElementById("homeLectureBox");
     if (homeLectureBox && upcomingLecture) {
       homeLectureBox.innerHTML = `
-        <div style="font-size: 13px; font-weight: 700; color: #ff4d4f; margin-bottom: 4px;">WEEK ${upcomingLecture.week} (다음 진행 예정 강의)</div>
+        <div style="font-size: 13px; font-weight: 700; color: #ef4444; margin-bottom: 4px;">WEEK ${upcomingLecture.week} (다음 진행 예정 강의)</div>
         <h4 style="font-size: 18px; margin-bottom: 10px; font-weight: 700; color: #fff; line-height: 1.35;">${upcomingLecture.title}</h4>
         <p style="font-size: 13.5px; color: var(--color-on-dark-mute); margin-bottom: 12px; border-bottom: 1px dashed var(--color-hairline-strong); padding-bottom: 10px;">📅 ${upcomingLecture.date} | 📍 ${upcomingLecture.location}</p>
         <div style="font-size: 14.5px; font-weight: 700; color: #ffffff; margin-bottom: 3px;">🎙️ 강사 : ${upcomingLecture.speaker}</div>
