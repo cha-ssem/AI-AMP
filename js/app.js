@@ -1946,7 +1946,7 @@ const App = {
       sidebarName.textContent = displayName;
     }
     if (sidebarRole) {
-      sidebarRole.textContent = `${user.cohort}기 · ${this.getRoleName(user.role)}`;
+      sidebarRole.textContent = `${user.cohort || 2}기 · ${this.getRoleName(user.role)}`;
     }
 
     if (feeStatusBadge) {

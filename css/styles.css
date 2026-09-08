@@ -3,7 +3,7 @@
    Based on HP_design.md Specification
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
   /* Brand & Accent (HP Electric Blue Family) */
@@ -62,9 +62,9 @@
   --color-muted-slate: #c2c2c2;
   --color-hairline-strong: #3d3d3d;
 
-  /* Typography (IBM Plex Sans KR - 최고 수준의 한글 가독성 & 엔터프라이즈 정합성) */
-  --font-display: 'IBM Plex Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'IBM Plex Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Typography (Noto Sans KR / 본고딕 - 높은 선명도와 가독성의 표준 웹 한글 폰트) */
+  --font-display: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
 
   /* 2-Tier Shape System (HP Signature: Buttons sharp 4px, Cards soft 16px) */
