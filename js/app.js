@@ -659,6 +659,13 @@ const App = {
     const galleryAdminAddBtn = document.getElementById("galleryAdminAddBtn");
     const canViewLedger = this.hasPermission("ledger_view") || this.currentRole === "admin" || this.currentRole === "exec";
     const canManageGallery = this.hasPermission("gallery_manage");
+    const canViewMembers = this.hasPermission("members_view");
+
+    // 원우 디렉토리 열람 권한이 없으면 열쇠(🔒) 아이콘 표기, 있으면 해제
+    const membersNavTab = document.querySelector('.nav-item[data-tab="members"]');
+    if (membersNavTab) {
+      membersNavTab.classList.toggle("restricted-tab", !canViewMembers);
+    }
 
     // 장부 열람 권한이 있는 경우 관리자/장부 탭 노출
     if (adminNavTab) adminNavTab.style.display = canViewLedger ? "block" : "none";
@@ -964,12 +971,7 @@ const App = {
     const canManageCurriculum = this.hasPermission("curriculum_manage");
     const canDownloadCurriculum = this.hasPermission("curriculum_download");
 
-    // 💡 상단 및 하단 관리자 전용 강의/행사 추가 버튼 표시 제어
-    const adminTopBtnContainer = document.getElementById("adminTopLectureBtnContainer");
-    if (adminTopBtnContainer) {
-      adminTopBtnContainer.style.display = canManageCurriculum ? "flex" : "none";
-    }
-
+    // 💡 하단 관리자 전용 강의/행사 추가 버튼 표시 제어
     const adminAddBtnContainer = document.getElementById("adminAddLectureBtnContainer");
     if (adminAddBtnContainer) {
       adminAddBtnContainer.style.display = canManageCurriculum ? "block" : "none";

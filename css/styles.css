@@ -361,7 +361,8 @@ p {
   font-weight: 600;
 }
 
-.nav-item.active::after {
+/* 💡 활성 탭 하단 인디케이터 바 (::before로 분리하여 restricted-tab 열쇠 이모지 ::after와 충돌 방지) */
+.nav-item.active::before {
   content: "";
   position: absolute;
   bottom: 0;
@@ -374,8 +375,12 @@ p {
 
 .nav-item.restricted-tab::after {
   content: "🔒";
-  margin-left: 5px;
-  font-size: 12px;
+  margin-left: 4px;
+  font-size: 11.5px;
+  display: inline-block;
+  line-height: 1;
+  position: static;
+  vertical-align: middle;
 }
 
 /* Mobile Bottom Navigation */
