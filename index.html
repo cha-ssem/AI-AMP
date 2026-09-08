@@ -329,7 +329,7 @@
           <button type="button" class="btn btn-primary btn-sm"
             style="width: 100%; text-align: center; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-weight: 700; cursor: pointer;"
             onclick="App.openReceiptZoomModal('images/2026_3_professor.jpg', '동의대학교 인공지능 최고경영자과정 강사진')">
-            🎓 23인의 강사진 보기
+            🎓 AI AMP 강사진 23인 보기
           </button>
         </div>
       </div>
@@ -1191,7 +1191,7 @@
         <h3 style="font-size: 20px; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
           🎉 네트워킹 데이 및 행사 등록 (관리자 전용)
         </h3>
-        <button class="btn btn-sm btn-outline-on-dark" style="padding: 2px 10px;"
+        <button class="btn btn-sm btn-outline" style="padding: 2px 10px;"
           onclick="App.closeAddNetworkingEventModal()">✕ 닫기</button>
       </div>
       <div class="modal-body" style="padding-top: 16px;">
@@ -1274,7 +1274,7 @@
           style="font-size: 20px; font-weight: 700; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
           ✏️ 네트워킹 행사 정보 수정
         </h3>
-        <button class="btn btn-sm btn-outline-on-dark" style="padding: 2px 10px;"
+        <button class="btn btn-sm btn-outline" style="padding: 2px 10px;"
           onclick="App.closeEditNetworkingEventModal()">✕ 닫기</button>
       </div>
       <div class="modal-body" style="padding-top: 16px;">
@@ -1376,9 +1376,9 @@
         <div class="modal-header"
           style="justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-hairline); padding-bottom: 16px; margin-bottom: 24px;">
           <div>
-            <h3 style="font-size: 22px; font-weight: 700; color: #fff;">👋 원우 회원가입 & 로그인</h3>
+            <h3 style="font-size: 22px; font-weight: 700; color: var(--color-ink);">👋 원우 회원가입 & 로그인</h3>
           </div>
-          <button class="btn btn-sm btn-outline-on-dark" style="padding: 4px 12px;" onclick="App.closeRegisterModal()">✕
+          <button class="btn btn-sm btn-outline" style="padding: 4px 12px;" onclick="App.closeRegisterModal()">✕
             닫기</button>
         </div>
 
@@ -1423,10 +1423,10 @@
       <div id="authLoginView" style="display: none;">
         <div class="modal-header"
           style="justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-hairline); padding-bottom: 12px; margin-bottom: 18px;">
-          <button type="button" class="btn btn-sm btn-outline-on-dark" onclick="App.switchAuthModalView('main')">←
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.switchAuthModalView('main')">←
             뒤로가기</button>
-          <h3 style="font-size: 18px; font-weight: 700; color: #fff;">🔑 기존 회원 로그인</h3>
-          <button class="btn btn-sm btn-outline-on-dark" style="padding: 2px 10px;"
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--color-ink);">🔑 기존 회원 로그인</h3>
+          <button class="btn btn-sm btn-outline" style="padding: 2px 10px;"
             onclick="App.closeRegisterModal()">✕</button>
         </div>
 
@@ -1454,10 +1454,10 @@
       <div id="authRegisterView" style="display: none;">
         <div class="modal-header"
           style="justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-hairline); padding-bottom: 12px; margin-bottom: 18px;">
-          <button type="button" class="btn btn-sm btn-outline-on-dark" onclick="App.switchAuthModalView('main')">←
+          <button type="button" class="btn btn-sm btn-outline" onclick="App.switchAuthModalView('main')">←
             뒤로가기</button>
-          <h3 style="font-size: 18px; font-weight: 700; color: #fff;">📝 신규 원우 회원가입</h3>
-          <button class="btn btn-sm btn-outline-on-dark" style="padding: 2px 10px;"
+          <h3 style="font-size: 18px; font-weight: 700; color: var(--color-ink);">📝 신규 원우 회원가입</h3>
+          <button class="btn btn-sm btn-outline" style="padding: 2px 10px;"
             onclick="App.closeRegisterModal()">✕</button>
         </div>
 
@@ -1490,7 +1490,8 @@
                 style="display: block; font-size: 13px; font-weight: 700; color: var(--color-ink); margin-bottom: 4px;">기수
                 (Cohort) *</label>
               <select id="regCohort" class="form-input">
-                <option value="13">13기</option>
+                <option value="2" selected>AI AMP 2기</option>
+                <option value="1">AI AMP 1기</option>
               </select>
             </div>
           </div>
@@ -1504,9 +1505,8 @@
             </div>
             <div>
               <label
-                style="display: block; font-size: 13px; font-weight: 700; color: var(--color-ink); margin-bottom: 4px;">직책
-                (직위)</label>
-              <input type="text" id="regPosition" class="form-input" placeholder="예: 대표, 이사, 팀장" />
+                style="display: block; font-size: 13px; font-weight: 700; color: var(--color-ink); margin-bottom: 4px;">전화번호</label>
+              <input type="tel" id="regPhone" class="form-input" placeholder="예: 010-1234-5678" />
             </div>
           </div>
 
