@@ -883,10 +883,10 @@ const App = {
     }
 
     container.innerHTML = filtered.map(m => `
-      <div class="product-card" style="padding: 18px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; display: flex; flex-direction: column; justify-content: space-between;" onclick="App.openMemberDetailModal('${m.id}')" title="클릭하여 ${this.escapeHtml(m.name)} 원우님의 상세 정보를 확인하세요">
+      <div class="product-card" style="padding: 18px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; display: flex; flex-direction: column; justify-content: flex-start; height: 100%; box-sizing: border-box;" onclick="App.openMemberDetailModal('${m.id}')" title="클릭하여 ${this.escapeHtml(m.name)} 원우님의 상세 정보를 확인하세요">
         <span class="corner-square"></span>
-        <div style="width: 100%;">
-          <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+        <div style="width: 100%; display: flex; flex-direction: column; justify-content: flex-start; margin-bottom: 12px;">
+          <div style="display: flex; gap: 12px; margin-bottom: 10px; align-items: flex-start;">
             <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: flex-start; flex-shrink: 0;">
               <img src="${this.escapeHtml(m.avatarUrl)}" alt="${this.escapeHtml(m.name)}" style="width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--color-hairline); display: block;" />
               ${m.industry ? `
@@ -934,10 +934,10 @@ const App = {
               ` : ''}
             </div>
           </div>
-          ${m.summary ? `<p style="font-size: 13.5px; color: var(--color-body); margin: 10px 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; word-break: break-word;">${this.escapeHtml(m.summary)}</p>` : ''}
+          ${m.summary ? `<p style="font-size: 13.5px; color: var(--color-body); margin: 6px 0 0 0; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; white-space: pre-line; word-break: break-word;">${this.escapeHtml(m.summary)}</p>` : ''}
         </div>
 
-        <div style="border-top: 1px solid var(--color-hairline); padding-top: 10px; font-size: 12.5px; color: var(--color-mute); display: flex; flex-direction: column; gap: 3px;">
+        <div style="margin-top: auto; border-top: 1px solid var(--color-hairline); padding-top: 10px; font-size: 12.5px; color: var(--color-mute); display: flex; flex-direction: column; gap: 3px;">
           ${m.location ? `<div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${this.escapeHtml(m.location)}">📍 ${this.escapeHtml(m.location)}</div>` : ''}
           ${m.phone ? `<div>📞 ${this.escapeHtml(this.maskPhone(m.phone))} ${this.currentRole === 'guest' ? '<span style="font-size: 11px; color: #94a3b8;">(로그인 시 공개)</span>' : ''}</div>` : ''}
           ${m.kakaoId ? `<div>💬 카톡: <strong style="color: var(--color-ink);">${this.escapeHtml(this.maskKakao(m.kakaoId))}</strong></div>` : ''}
