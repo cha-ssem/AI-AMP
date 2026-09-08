@@ -1173,8 +1173,8 @@ const App = {
       const addLecLocation = document.getElementById("addLecLocation");
 
       if (addLecWeek) addLecWeek.value = nextWeek;
-      if (addLecDate && !addLecDate.value) addLecDate.value = "2026-09-12 (토) 13:30";
-      if (addLecLocation && !addLecLocation.value) addLecLocation.value = "산학협력관 1층 프라임컨벤션홀";
+      if (addLecDate && !addLecDate.value) addLecDate.value = "2026-09-15 (화) 19:00";
+      if (addLecLocation && !addLecLocation.value) addLecLocation.value = "국제관 306호";
 
       modal.classList.add("active");
     }
