@@ -600,8 +600,8 @@ p {
   margin-bottom: 48px;
   border-radius: var(--radius-xl); /* HP 16px Card Radius */
   display: grid;
-  grid-template-columns: 1.25fr 0.75fr;
-  gap: 40px;
+  grid-template-columns: 1.35fr 0.65fr;
+  gap: 36px;
   align-items: center;
   position: relative;
   overflow: hidden;
@@ -622,11 +622,13 @@ p {
 
 .hero-card-dark-nvidia h1 {
   color: #ffffff;
-  font-size: 45px;
+  font-size: clamp(22px, 2.6vw, 38px);
   font-weight: 500;
   margin-bottom: 16px;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  word-break: keep-all;
 }
 
 .hero-subhead-nvidia {
@@ -669,7 +671,7 @@ p {
   border: 1px solid rgba(255, 255, 255, 0.15);
   padding: 24px;
   border-radius: var(--radius-xl); /* 16px */
-  margin-top: 0;
+  margin-top: 36px;
   box-shadow: var(--shadow-dark);
 }
 
