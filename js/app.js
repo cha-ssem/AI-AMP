@@ -4430,8 +4430,12 @@ const App = {
         titleEl.textContent = `📍 ${title}`;
       } else if (title && (title.includes("인포그래픽") || title.includes("현장사진") || title.includes("사진") || title.includes("갤러리"))) {
         titleEl.textContent = `📸 ${title}`;
+      } else if (title && (title.includes("강사진") || title.includes("교수진") || title.includes("커리큘럼") || title.includes("브로슈어") || title.includes("Scholars") || title.includes("Faculty"))) {
+        titleEl.textContent = `🎓 ${title}`;
+      } else if (title && title.includes("영수증")) {
+        titleEl.textContent = `🧾 ${title}`;
       } else {
-        titleEl.textContent = `🧾 ${title || '상세'} 영수증`;
+        titleEl.textContent = title ? `📋 ${title}` : `🧾 상세 영수증`;
       }
     }
 
