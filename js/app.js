@@ -883,17 +883,17 @@ const App = {
     }
 
     container.innerHTML = filtered.map(m => `
-      <div class="product-card" style="padding: 18px 14px; cursor: pointer; transition: all 0.2s ease; position: relative;" onclick="App.openMemberDetailModal('${m.id}')" title="클릭하여 ${this.escapeHtml(m.name)} 원우님의 상세 정보를 확인하세요">
+      <div class="product-card" style="padding: 18px 14px; cursor: pointer; transition: all 0.2s ease; position: relative; display: flex; flex-direction: column; justify-content: space-between;" onclick="App.openMemberDetailModal('${m.id}')" title="클릭하여 ${this.escapeHtml(m.name)} 원우님의 상세 정보를 확인하세요">
         <span class="corner-square"></span>
-        <div>
-          <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; flex-shrink: 0;">
-              <img src="${this.escapeHtml(m.avatarUrl)}" alt="${this.escapeHtml(m.name)}" style="width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--color-hairline);" />
+        <div style="width: 100%;">
+          <div style="display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start;">
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: center; justify-content: flex-start; flex-shrink: 0;">
+              <img src="${this.escapeHtml(m.avatarUrl)}" alt="${this.escapeHtml(m.name)}" style="width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--color-hairline); display: block;" />
               ${m.industry ? `
-                <img src="${this.escapeHtml(this.getIndustryImage(m.industry))}" alt="${this.escapeHtml(m.industry)}" title="${this.escapeHtml(m.industry)}" style="width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--color-hairline); background: #ffffff;" />
+                <img src="${this.escapeHtml(this.getIndustryImage(m.industry))}" alt="${this.escapeHtml(m.industry)}" title="${this.escapeHtml(m.industry)}" style="width: 52px; height: 52px; border-radius: var(--radius-sm); object-fit: cover; border: 1px solid var(--color-hairline); background: #ffffff; display: block;" />
               ` : ''}
             </div>
-            <div style="flex: 1; min-width: 0;">
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-start;">
               <!-- 💡 1줄 : 성명 + 기수/등급 배지 -->
               <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
                 <span style="font-size: 16.5px; font-weight: 700; line-height: 1.1; white-space: nowrap;">${this.escapeHtml(m.name)}</span>
