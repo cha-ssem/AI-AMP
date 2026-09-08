@@ -600,7 +600,7 @@ p {
   margin-bottom: 48px;
   border-radius: var(--radius-xl); /* HP 16px Card Radius */
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(350px, 0.85fr);
+  grid-template-columns: minmax(0, 1fr) 330px;
   gap: 40px;
   align-items: flex-start;
   position: relative;
@@ -667,7 +667,7 @@ p {
 .hero-monitor-card {
   background-color: var(--color-ink-soft);
   border: 1px solid rgba(255, 255, 255, 0.15);
-  padding: 24px;
+  padding: 22px 20px;
   border-radius: var(--radius-xl); /* 16px */
   margin-top: 106px;
   box-shadow: var(--shadow-dark);
