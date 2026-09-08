@@ -620,13 +620,16 @@ p {
   background-color: var(--color-primary);
 }
 
-.hero-card-dark-nvidia h1 {
+.hero-card-dark-nvidia h1,
+.hero-main-title {
   color: #ffffff;
   font-size: 45px;
   font-weight: 500;
   margin-bottom: 16px;
-  line-height: 1.05;
+  line-height: 1.1;
   letter-spacing: -0.03em;
+  word-break: keep-all;
+  overflow-wrap: break-word;
 }
 
 .hero-subhead-nvidia {
@@ -1179,10 +1182,20 @@ p {
 @media (max-width: 1024px) {
   .hero-card-dark-nvidia {
     grid-template-columns: 1fr;
-    padding: 40px 28px;
+    padding: 36px 28px;
+    gap: 32px;
   }
   .hero-monitor-card {
     margin-top: 0;
+  }
+  .hero-card-dark-nvidia h1,
+  .hero-main-title {
+    font-size: 34px;
+    line-height: 1.15;
+  }
+  .hero-subhead-nvidia {
+    font-size: 16px;
+    margin-bottom: 24px;
   }
   .nvidia-card-grid {
     grid-template-columns: 1fr;
@@ -1207,7 +1220,7 @@ p {
   }
   .main-wrapper {
     padding: 0 16px;
-    margin-top: 20px;
+    margin-top: 16px;
   }
   .nav-container {
     padding: 0 16px;
@@ -1215,6 +1228,69 @@ p {
   .footer-container-hp {
     padding: 0 16px;
   }
+
+  /* Hero Section Mobile Optimization */
+  .hero-card-dark-nvidia {
+    padding: 24px 18px;
+    margin-bottom: 32px;
+    gap: 22px;
+    border-radius: var(--radius-lg);
+  }
+  .hero-card-dark-nvidia::before {
+    width: 4px;
+  }
+  .chevron-decoration-container {
+    display: none;
+  }
+  .hero-top-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    margin-bottom: 12px !important;
+  }
+  .hero-card-dark-nvidia h1,
+  .hero-main-title {
+    font-size: 24px;
+    line-height: 1.25;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
+  .hero-subhead-nvidia {
+    font-size: 14.5px;
+    line-height: 1.55;
+    margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.85);
+  }
+  .hero-btn-group {
+    gap: 10px;
+    width: 100%;
+  }
+  .hero-btn-group .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    padding: 11px 16px;
+  }
+  .hero-stats-nvidia {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding-top: 16px;
+    margin-top: 20px;
+    text-align: center;
+  }
+  .stat-num-nvidia {
+    font-size: 22px;
+  }
+  .stat-label-nvidia {
+    font-size: 10px;
+    letter-spacing: 0.3px;
+  }
+  .hero-monitor-card {
+    padding: 16px 14px;
+    border-radius: var(--radius-lg);
+  }
+
   .toast {
     bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     left: 16px;
@@ -1244,6 +1320,28 @@ p {
   }
   .curriculum-grid-container {
     grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-card-dark-nvidia {
+    padding: 20px 14px;
+    border-radius: 10px;
+  }
+  .hero-card-dark-nvidia h1,
+  .hero-main-title {
+    font-size: 20.5px;
+    line-height: 1.28;
+  }
+  .hero-subhead-nvidia {
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+  .hero-stats-nvidia .stat-num-nvidia {
+    font-size: 18px;
+  }
+  .hero-stats-nvidia .stat-label-nvidia {
+    font-size: 9px;
   }
 }
 
