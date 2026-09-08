@@ -1035,6 +1035,9 @@ const App = {
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px;" onclick="App.openEditLectureModal(${l.week})">
                         ✏️ 수정
                       </button>
+                      <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #f59e0b; color: #f59e0b; background: rgba(245,158,11,0.06); font-weight: 700;" onclick="App.openConvertLectureToEventModal(${l.week})" title="이 강의 일정을 네트워킹 행사로 전환 등록합니다">
+                        🎉 행사 전환
+                      </button>
                       <button class="btn btn-outline btn-sm" style="padding: 2px 10px; font-size: 11.5px; min-height: 26px; border-color: #dc2626; color: #dc2626;" onclick="App.deleteLecture(${l.week})">
                         🗑️ 삭제
                       </button>
@@ -1255,8 +1258,13 @@ const App = {
     this.renderSchedule();
   },
 
-  /* 💡 네트워킹 데이 및 행사 등록 & 관리 */
+  /* 💡 네트워킹 데이 및 행사 등록 & 관리 & 강의 전환 */
   openAddNetworkingEventModal() {
+    this.convertingLectureWeek = null;
+    const titleEl = document.querySelector("#networkingEventAddModal .modal-header h3");
+    if (titleEl) {
+      titleEl.innerHTML = "🎉 네트워킹 데이 및 행사 등록 (관리자 전용)";
+    }
     const modal = document.getElementById("networkingEventAddModal");
     if (modal) {
       const addCohort = document.getElementById("addEventCohort");
@@ -1265,9 +1273,78 @@ const App = {
     }
   },
 
+  /* 💡 강의 커리큘럼을 네트워킹 행사로 전환 등록하는 모달 오픈 */
+  openConvertLectureToEventModal(week) {
+    if (!this.hasPermission("curriculum_manage")) {
+      this.showToast("🔒 행사 전환 권한은 관리자 및 임원 전용입니다.");
+      return;
+    }
+
+    const lec = (this.lectures || []).find(l => l.week === week);
+    if (!lec) {
+      this.showToast("⚠️ 전환할 강의 정보를 찾을 수 없습니다.");
+      return;
+    }
+
+    this.convertingLectureWeek = week;
+
+    // 강의 수정 모달이 열려 있다면 닫기
+    this.closeEditLectureModal();
+
+    // 행사 등록 폼에 강의 정보 자동 기입
+    const cohortEl = document.getElementById("addEventCohort");
+    const titleEl = document.getElementById("addEventTitle");
+    const dateEl = document.getElementById("addEventDate");
+    const locEl = document.getElementById("addEventLocation");
+    const descEl = document.getElementById("addEventDescription");
+    const mapUrlEl = document.getElementById("addEventMapUrl");
+
+    if (cohortEl) cohortEl.value = lec.cohort || 13;
+    if (titleEl) titleEl.value = lec.title || "";
+    if (dateEl) dateEl.value = lec.date || "";
+    if (locEl) locEl.value = lec.location || "";
+    if (mapUrlEl) mapUrlEl.value = "";
+
+    // 설명란에 강사 정보 및 강의 요약 추가
+    let combinedDesc = "";
+    if (lec.speaker) {
+      combinedDesc += `[진행/강사]: ${lec.speaker}${lec.speakerBio ? ` (${lec.speakerBio})` : ''}\n`;
+    }
+    if (lec.description) {
+      combinedDesc += `${lec.description}`;
+    }
+    if (descEl) descEl.value = combinedDesc.trim();
+
+    // 모달 헤더 텍스트 변경
+    const modalHeaderTitle = document.querySelector("#networkingEventAddModal .modal-header h3");
+    if (modalHeaderTitle) {
+      modalHeaderTitle.innerHTML = `🔄 [WEEK ${week}] 강의 ➔ 네트워킹 행사로 전환 등록`;
+    }
+
+    const modal = document.getElementById("networkingEventAddModal");
+    if (modal) modal.classList.add("active");
+  },
+
+  /* 💡 강의 수정 모달 내 전환 버튼 클릭 시 호출 */
+  convertCurrentEditLectureToEvent() {
+    const weekVal = parseInt(document.getElementById("editLecWeek").value, 10);
+    if (isNaN(weekVal)) {
+      this.showToast("⚠️ 전환할 주차 정보를 확인할 수 없습니다.");
+      return;
+    }
+    this.openConvertLectureToEventModal(weekVal);
+  },
+
   closeAddNetworkingEventModal() {
     const modal = document.getElementById("networkingEventAddModal");
     if (modal) modal.classList.remove("active");
+    this.convertingLectureWeek = null;
+    const form = document.getElementById("addNewNetworkingEventForm");
+    if (form) form.reset();
+    const titleEl = document.querySelector("#networkingEventAddModal .modal-header h3");
+    if (titleEl) {
+      titleEl.innerHTML = "🎉 네트워킹 데이 및 행사 등록 (관리자 전용)";
+    }
   },
 
   async addNetworkingEvent(e) {
@@ -1316,8 +1393,27 @@ const App = {
     this.events.push(newEvent);
     StorageService.saveEvents(this.events);
 
-    this.closeAddNetworkingEventModal();
-    this.showToast(`🎉 [${title}] 네트워킹 행사가 등록되었습니다!`);
+    // 💡 만약 강의에서 전환 등록된 경우라면 기존 강의 항목 삭제
+    const targetConvertWeek = this.convertingLectureWeek;
+    if (targetConvertWeek !== null && targetConvertWeek !== undefined) {
+      this.lectures = (this.lectures || []).filter(l => l.week !== targetConvertWeek);
+      StorageService.saveLectures(this.lectures);
+
+      if (window.db && window.FS && window.FS.deleteDoc && window.FS.doc) {
+        try {
+          await window.FS.deleteDoc(window.FS.doc(window.db, "lectures", `lec-w${targetConvertWeek}`));
+          console.log(`Firebase Firestore: 전환 완료에 따른 ${targetConvertWeek}주차 기존 강의 삭제 완료!`);
+        } catch (delErr) {
+          console.warn("Firestore 기존 강의 삭제 오류:", delErr);
+        }
+      }
+      this.convertingLectureWeek = null;
+      this.closeAddNetworkingEventModal();
+      this.showToast(`🎉 [WEEK ${targetConvertWeek}] 강의가 [${title}] 행사로 성공적으로 전환되었습니다!`);
+    } else {
+      this.closeAddNetworkingEventModal();
+      this.showToast(`🎉 [${title}] 네트워킹 행사가 등록되었습니다!`);
+    }
 
     const form = document.getElementById("addNewNetworkingEventForm");
     if (form) form.reset();
