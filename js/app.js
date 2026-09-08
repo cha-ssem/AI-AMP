@@ -1823,7 +1823,8 @@ const App = {
     const cohort = parseInt(document.getElementById("regCohort").value, 10) || 2;
     const company = document.getElementById("regCompany").value.trim();
     const position = document.getElementById("regPosition") ? document.getElementById("regPosition").value.trim() : "";
-    const industry = document.getElementById("regIndustry").value;
+    const industryEl = document.getElementById("regIndustry");
+    const industry = industryEl ? industryEl.value : "기타 서비스업";
     const phone = document.getElementById("regPhone") ? document.getElementById("regPhone").value.trim() : "";
     const kakaoId = document.getElementById("regKakao") ? document.getElementById("regKakao").value.trim() : "";
     const locationEl = document.getElementById("regLocation");
@@ -1831,8 +1832,8 @@ const App = {
     const location = locationEl ? locationEl.value.trim() : "";
     const summary = summaryEl ? summaryEl.value.trim() : "";
 
-    if (!username || !password || !name || !company) {
-      this.showToast("⚠️ 필수 정보(희망 아이디, 비밀번호, 성명, 회사명)를 모두 입력해 주세요.");
+    if (!username || !password || !name || !company || !phone) {
+      this.showToast("⚠️ 필수 정보(희망 아이디, 비밀번호, 성명, 회사명, 전화번호)를 모두 입력해 주세요.");
       return;
     }
 
