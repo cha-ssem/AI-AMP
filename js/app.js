@@ -35,6 +35,7 @@ const App = {
     this.permissions = StorageService.getPermissions();
     this.initialBalance = StorageService.getInitialBalance();
     this.initialBalanceUpdatedAt = StorageService.getInitialBalanceUpdatedAt();
+    this.feeAccount = StorageService.getFeeAccount();
 
     // 더미 목업 회원 ID가 남아있을 경우 메모리에서 즉시 필터링
     const dummyIds = new Set(["mem-1301", "mem-1302", "mem-1303", "mem-1304", "mem-1305", "mem-1306", "mem-1307", "mem-1308", "mem-201", "mem-202", "mem-203", "mem-204", "mem-205", "mem-206", "mem-207", "mem-208"]);
@@ -223,8 +224,13 @@ const App = {
         this.closeGalleryModal();
         this.closeReceiptZoomModal();
         this.closeAccountInfoModal();
+        this.closeFeeAccountModal();
+        this.closeInitialBalanceModal();
       }
     });
+
+    // 💡 회비 납부 계좌 및 금액 UI 초기화
+    this.updateFeeAccountUI();
   },
 
   async fetchCloudMembers() {
@@ -339,6 +345,20 @@ const App = {
 
           // 💡 initial_balance 이월 잔고 설정 문서는 장부 항목이 아닌 이월 잔고 설정값으로 분리 저장
           if (docId === "initial_balance" || data.isConfig === true) {
+            // 1) 회비 납부 계좌/금액 설정 문서인 경우
+            if (docId === "fee_account_config" || data.feeAccount || (data.bank && data.accountNumber)) {
+              const fa = data.feeAccount || {
+                bank: data.bank,
+                accountNumber: data.accountNumber,
+                accountHolder: data.accountHolder,
+                amount: data.amount
+              };
+              this.feeAccount = StorageService.saveFeeAccount(fa);
+              this.updateFeeAccountUI();
+              return;
+            }
+
+            // 2) 초기 이월 잔고 설정 문서인 경우
             if (typeof data.initialBalance === "number") {
               this.initialBalance = data.initialBalance;
               const updatedDate = data.updatedAt || "";
@@ -1984,18 +2004,28 @@ const App = {
         if (unpaidFeeNotice) unpaidFeeNotice.style.display = "block";
       }
     }
+
+    this.updateFeeAccountUI();
   },
 
   /**
    * 기업가정신 13기 공식 지정 회비 계좌번호 복사
    */
   copyFeeAccount() {
-    const accountNo = "79422963241";
-    navigator.clipboard.writeText(accountNo).then(() => {
-      this.showToast(`📋 회비 계좌번호(${accountNo} 카카오뱅크, 예금주: 김정순)가 복사되었습니다!`);
-    }).catch(() => {
+    const fa = this.feeAccount || StorageService.getFeeAccount();
+    const accountNo = fa.accountNumber || "79422963241";
+    const bank = fa.bank || "카카오뱅크";
+    const holder = fa.accountHolder || "김정순";
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(accountNo).then(() => {
+        this.showToast(`📋 회비 계좌번호(${accountNo} ${bank}, 예금주: ${holder})가 클립보드에 복사되었습니다!`);
+      }).catch(() => {
+        prompt("아래 계좌번호를 복사해주세요:", accountNo);
+      });
+    } else {
       prompt("아래 계좌번호를 복사해주세요:", accountNo);
-    });
+    }
   },
 
   getIndustryImage(industry) {
@@ -2416,7 +2446,7 @@ const App = {
     if (dateInput) dateInput.value = todayStr;
 
     const amountInput = document.getElementById("bulkFeePayAmount");
-    if (amountInput) amountInput.value = "100000";
+    if (amountInput) amountInput.value = (this.feeAccount && this.feeAccount.amount) ? this.feeAccount.amount : "100000";
 
     this.selectedBulkMemberIds = targetMembers.map(m => m.id);
     this.updateBulkTotalEstimate();
@@ -2464,7 +2494,9 @@ const App = {
     if (ledgerSyncCheck) ledgerSyncCheck.checked = true;
 
     const feeAmountInput = document.getElementById("adminAddMemberFeeAmount");
-    if (feeAmountInput) feeAmountInput.value = "100000";
+    if (feeAmountInput) {
+      feeAmountInput.value = (this.feeAccount && this.feeAccount.amount) ? this.feeAccount.amount : "100000";
+    }
 
     const feeBox = document.getElementById("adminAddMemberFeeBox");
     if (feeBox) feeBox.style.display = "grid";
@@ -3223,7 +3255,7 @@ const App = {
 
     document.getElementById("feePayMemberId").value = member.id;
     document.getElementById("feePayMemberName").value = `${member.name} (${member.cohort}기 - ${member.company || '13기 원우'})`;
-    document.getElementById("feePayAmount").value = "100000"; // 💡 기본 정회원 회비 100,000원
+    document.getElementById("feePayAmount").value = (this.feeAccount && this.feeAccount.amount) ? this.feeAccount.amount : "100000";
     document.getElementById("feePayDate").value = selectedFeeDate;
 
     modal.classList.add("active");
@@ -4133,6 +4165,136 @@ const App = {
     this.renderLedger();
   },
 
+  /* 💡 회비 납부 계좌 및 금액 UI 일괄 반영 */
+  updateFeeAccountUI() {
+    if (!this.feeAccount) {
+      this.feeAccount = StorageService.getFeeAccount();
+    }
+    const { bank, accountNumber, accountHolder, amount } = this.feeAccount;
+    const formattedAmount = (Number(amount) || 100000).toLocaleString();
+
+    // 1) 마이페이지 미납 시 계좌 안내 카드
+    const unpaidBank = document.getElementById("unpaidNoticeBank");
+    if (unpaidBank) unpaidBank.textContent = bank || "카카오뱅크";
+
+    const unpaidAccount = document.getElementById("unpaidNoticeAccount");
+    if (unpaidAccount) unpaidAccount.textContent = accountNumber || "79422963241";
+
+    const unpaidHolder = document.getElementById("unpaidNoticeHolder");
+    if (unpaidHolder) unpaidHolder.textContent = accountHolder || "김정순";
+
+    const unpaidAmount = document.getElementById("unpaidNoticeAmount");
+    if (unpaidAmount) unpaidAmount.textContent = `${formattedAmount}원`;
+
+    // 2) 회비 납부 계좌 안내 모달 (accountInfoModal)
+    const infoBank = document.getElementById("accountInfoBank");
+    if (infoBank) infoBank.textContent = bank || "카카오뱅크";
+
+    const infoAccount = document.getElementById("accountInfoAccount");
+    if (infoAccount) infoAccount.textContent = accountNumber || "79422963241";
+
+    const infoHolder = document.getElementById("accountInfoHolder");
+    if (infoHolder) infoHolder.textContent = accountHolder || "김정순";
+
+    const infoFeeAmount = document.getElementById("accountInfoFeeAmount");
+    if (infoFeeAmount) infoFeeAmount.textContent = `(정회원 회비: ${formattedAmount}원)`;
+
+    // 3) 관리자 개별 납부 모달 안내 문구
+    const feePayAmountHint = document.getElementById("feePayAmountHint");
+    if (feePayAmountHint) {
+      feePayAmountHint.textContent = `💡 기본 ${formattedAmount}원으로 자동 설정되며 자유롭게 금액을 수정할 수 있습니다.`;
+    }
+  },
+
+  /* 💡 회비 납부 계좌 및 금액 설정 모달 관련 (관리자 전용) */
+  openFeeAccountModal(e) {
+    if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 회비 납부 계좌 설정 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
+
+    const modal = document.getElementById("feeAccountModal");
+    if (!modal) {
+      console.warn("feeAccountModal 엘리먼트를 찾을 수 없습니다.");
+      return;
+    }
+
+    if (!this.feeAccount) {
+      this.feeAccount = StorageService.getFeeAccount();
+    }
+
+    const bankInput = document.getElementById("feeAccountBankInput");
+    if (bankInput) bankInput.value = this.feeAccount.bank || "카카오뱅크";
+
+    const numInput = document.getElementById("feeAccountNumberInput");
+    if (numInput) numInput.value = this.feeAccount.accountNumber || "79422963241";
+
+    const holderInput = document.getElementById("feeAccountHolderInput");
+    if (holderInput) holderInput.value = this.feeAccount.accountHolder || "김정순";
+
+    const amountInput = document.getElementById("feeAccountAmountInput");
+    if (amountInput) amountInput.value = this.feeAccount.amount || 100000;
+
+    modal.classList.add("active");
+    modal.style.display = "flex";
+    modal.style.zIndex = "9999";
+  },
+
+  closeFeeAccountModal() {
+    const modal = document.getElementById("feeAccountModal");
+    if (modal) {
+      modal.classList.remove("active");
+      modal.style.display = "none";
+    }
+  },
+
+  async saveFeeAccount(e) {
+    if (e) e.preventDefault();
+
+    if (!this.hasPermission("ledger_manage")) {
+      this.showToast("🔒 회비 납부 계좌 설정 권한은 관리자(admin) 전용입니다.");
+      return;
+    }
+
+    const bank = (document.getElementById("feeAccountBankInput").value || "").trim();
+    const accountNumber = (document.getElementById("feeAccountNumberInput").value || "").trim();
+    const accountHolder = (document.getElementById("feeAccountHolderInput").value || "").trim();
+    const amount = parseInt(document.getElementById("feeAccountAmountInput").value, 10) || 100000;
+
+    if (!bank || !accountNumber || !accountHolder) {
+      this.showToast("⚠️ 은행명, 계좌번호, 예금주를 모두 입력해주세요.");
+      return;
+    }
+
+    const updatedAccount = {
+      bank,
+      accountNumber,
+      accountHolder,
+      amount
+    };
+
+    this.feeAccount = StorageService.saveFeeAccount(updatedAccount);
+    this.updateFeeAccountUI();
+
+    // Firestore ledger/fee_account_config 문서 저장
+    if (window.db && window.FS && window.FS.setDoc && window.FS.doc) {
+      try {
+        await window.FS.setDoc(window.FS.doc(window.db, "ledger", "fee_account_config"), {
+          ...updatedAccount,
+          isConfig: true,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Firestore 회비 계좌 설정 저장 경고:", err);
+      }
+    }
+
+    this.closeFeeAccountModal();
+    this.showToast(`🎉 회비 납부 계좌(${bank} ${accountNumber}, 예금주: ${accountHolder}, 회비: ${amount.toLocaleString()}원)가 설정되었습니다!`);
+  },
+
   /* 이월 잔고 모달 관련 */
   openInitialBalanceModal(e) {
     if (e) e.preventDefault();
@@ -4272,6 +4434,7 @@ const App = {
 
   /* 회비 계좌 팝업 모달 관련 */
   openAccountInfoModal() {
+    this.updateFeeAccountUI();
     const modal = document.getElementById("accountInfoModal");
     if (!modal) return;
     modal.classList.add("active");
@@ -5257,15 +5420,19 @@ ${ev.description || '원우님들과 함께한 즐거운 행사 후기 및 이�
   },
 
   copyAccountToClipboard() {
-    const accountNum = "79422963241";
+    const fa = this.feeAccount || StorageService.getFeeAccount();
+    const accountNum = fa.accountNumber || "79422963241";
+    const bank = fa.bank || "카카오뱅크";
+    const holder = fa.accountHolder || "김정순";
+
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(accountNum).then(() => {
-        this.showToast("📋 카카오뱅크 79422963241 (예금주: 김정순) 계좌번호가 클립보드에 복사되었습니다!");
+        this.showToast(`📋 ${bank} ${accountNum} (예금주: ${holder}) 계좌번호가 클립보드에 복사되었습니다!`);
       }).catch(() => {
-        this.showToast("📋 회비 계좌: 카카오뱅크 79422963241 (예금주: 김정순)");
+        this.showToast(`📋 회비 계좌: ${bank} ${accountNum} (예금주: ${holder})`);
       });
     } else {
-      this.showToast("📋 회비 계좌: 카카오뱅크 79422963241 (예금주: 김정순)");
+      this.showToast(`📋 회비 계좌: ${bank} ${accountNum} (예금주: ${holder})`);
     }
   },
 

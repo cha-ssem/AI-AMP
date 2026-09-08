@@ -152,16 +152,24 @@ class StorageService {
       return INITIAL_LEDGER;
     }
     let parsed = JSON.parse(data);
-    // 이전 샘플 더미 내역(led-01~led-04) 및 initial_balance 설정 문서 자동 필터링 제거
+    // 이전 샘플 더미 내역(led-01~led-04) 및 설정 문서(initial_balance, fee_account_config) 자동 필터링 제거
     let needsSave = false;
     const filtered = parsed.filter(item => {
       if (!item) return false;
-      if (item.id === "initial_balance" || item.isConfig === true) {
-        if (typeof item.initialBalance === "number") {
-          localStorage.setItem("enterprise_13th_initial_balance", item.initialBalance.toString());
+      if (item.id === "initial_balance" || item.isConfig === true || item.id === "fee_account_config") {
+        if (item.id === "initial_balance" || (item.isConfig === true && typeof item.initialBalance === "number")) {
+          if (typeof item.initialBalance === "number") {
+            localStorage.setItem("enterprise_13th_initial_balance", item.initialBalance.toString());
+          }
+          if (item.updatedAt) {
+            localStorage.setItem("enterprise_13th_initial_balance_updated_at", item.updatedAt.toString());
+          }
         }
-        if (item.updatedAt) {
-          localStorage.setItem("enterprise_13th_initial_balance_updated_at", item.updatedAt.toString());
+        if (item.id === "fee_account_config" || (item.isConfig === true && item.feeAccount)) {
+          const fa = item.feeAccount || item;
+          if (fa.bank || fa.accountNumber) {
+            StorageService.saveFeeAccount(fa);
+          }
         }
         return false;
       }
@@ -199,6 +207,43 @@ class StorageService {
     if (updatedAt) {
       localStorage.setItem("enterprise_13th_initial_balance_updated_at", updatedAt.toString());
     }
+  }
+
+  /* 💡 회비 납부 계좌 및 회비 금액 설정 스토리지 관리 */
+  static getFeeAccount() {
+    const data = localStorage.getItem("enterprise_13th_fee_account");
+    const defaultAcc = {
+      bank: "카카오뱅크",
+      accountNumber: "79422963241",
+      accountHolder: "김정순",
+      amount: 100000
+    };
+    if (!data) {
+      return defaultAcc;
+    }
+    try {
+      const parsed = JSON.parse(data);
+      return {
+        bank: parsed.bank || defaultAcc.bank,
+        accountNumber: parsed.accountNumber || defaultAcc.accountNumber,
+        accountHolder: parsed.accountHolder || defaultAcc.accountHolder,
+        amount: typeof parsed.amount === "number" ? parsed.amount : (parseInt(parsed.amount, 10) || defaultAcc.amount)
+      };
+    } catch (e) {
+      return defaultAcc;
+    }
+  }
+
+  static saveFeeAccount(feeAccount) {
+    const current = StorageService.getFeeAccount();
+    const updated = {
+      bank: feeAccount.bank !== undefined ? feeAccount.bank.trim() : current.bank,
+      accountNumber: feeAccount.accountNumber !== undefined ? feeAccount.accountNumber.trim() : current.accountNumber,
+      accountHolder: feeAccount.accountHolder !== undefined ? feeAccount.accountHolder.trim() : current.accountHolder,
+      amount: typeof feeAccount.amount === "number" ? feeAccount.amount : (parseInt(feeAccount.amount, 10) || current.amount)
+    };
+    localStorage.setItem("enterprise_13th_fee_account", JSON.stringify(updated));
+    return updated;
   }
 
   static getCurrentUserRole() {
