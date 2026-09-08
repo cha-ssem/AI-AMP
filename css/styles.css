@@ -600,7 +600,7 @@ p {
   margin-bottom: 48px;
   border-radius: var(--radius-xl); /* HP 16px Card Radius */
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 360px;
+  grid-template-columns: minmax(0, 1fr) 450px;
   gap: 40px;
   align-items: flex-start;
   position: relative;
