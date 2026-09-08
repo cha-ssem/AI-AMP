@@ -964,6 +964,17 @@ const App = {
     const canManageCurriculum = this.hasPermission("curriculum_manage");
     const canDownloadCurriculum = this.hasPermission("curriculum_download");
 
+    // 💡 상단 및 하단 관리자 전용 강의/행사 추가 버튼 표시 제어
+    const adminTopBtnContainer = document.getElementById("adminTopLectureBtnContainer");
+    if (adminTopBtnContainer) {
+      adminTopBtnContainer.style.display = canManageCurriculum ? "flex" : "none";
+    }
+
+    const adminAddBtnContainer = document.getElementById("adminAddLectureBtnContainer");
+    if (adminAddBtnContainer) {
+      adminAddBtnContainer.style.display = canManageCurriculum ? "block" : "none";
+    }
+
     // 강의 및 네트워킹 행사 통합 리스트 구성
     const combined = [];
     (this.lectures || []).forEach(l => {
@@ -987,7 +998,10 @@ const App = {
     });
 
     if (combined.length === 0) {
-      container.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--color-mute);">등록된 AI AMP 2기 강의 커리큘럼 및 일정이 없습니다.</div>`;
+      container.innerHTML = `<div style="text-align: center; padding: 48px; color: var(--color-mute); background: var(--color-surface-soft); border-radius: var(--radius-lg); border: 1px dashed var(--color-hairline);">
+        <p style="font-size: 16px; font-weight: 700; color: var(--color-ink); margin-bottom: 8px;">📢 등록된 AI AMP 2기 강의 커리큘럼 및 일정이 없습니다.</p>
+        ${canManageCurriculum ? `<p style="font-size: 13.5px; color: var(--color-mute); margin: 0;">상단 또는 하단의 <strong>[➕ 신규 강의 일정 추가]</strong> 버튼을 눌러 새 강의를 등록해 보세요.</p>` : ''}
+      </div>`;
       return;
     }
 
@@ -1141,14 +1155,14 @@ const App = {
         `;
       }
     }).join("");
-
-    const adminAddBtnContainer = document.getElementById("adminAddLectureBtnContainer");
-    if (adminAddBtnContainer) {
-      adminAddBtnContainer.style.display = isExecOrAdmin ? "block" : "none";
-    }
   },
 
   openAddLectureModal() {
+    if (!this.hasPermission("curriculum_manage")) {
+      this.showToast("🔒 강의 커리큘럼 등록 권한이 필요합니다.");
+      return;
+    }
+
     const modal = document.getElementById("lectureAddModal");
     if (modal) {
       const nextWeek = this.lectures.length > 0 ? Math.max(...this.lectures.map(l => l.week)) + 1 : 1;

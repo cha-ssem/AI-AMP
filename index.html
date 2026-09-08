@@ -108,7 +108,7 @@
               2기 원우 디렉토리 →
             </button>
             <button class="btn btn-outline-on-dark" onclick="App.switchTab('schedule')">
-              23인 강사진 & 커리큘럼
+              최고경영자과정 커리큘럼
             </button>
           </div>
 
@@ -156,7 +156,7 @@
           style="cursor: pointer; min-height: 260px; padding-bottom: 20px;">
           <div>
             <span class="pill-tag-nvidia" style="margin-bottom: 12px;">2ND CURRICULUM</span>
-            <h3 style="font-size: 20px; margin: 0 0 8px 0;">23인 석학 & 명사 강의 일정</h3>
+            <h3 style="font-size: 20px; margin: 0 0 8px 0;">최고경영자과정 강의 일정</h3>
             <p style="font-size: 14.5px; color: var(--color-slate); line-height: 1.5;">동의대 AI AMP 2기 전체 커리큘럼 확인, 강사 소속 및 전문분야
               확인</p>
           </div>
@@ -169,7 +169,7 @@
           style="cursor: pointer; min-height: 260px; padding-bottom: 20px;">
           <div>
             <span class="pill-tag-nvidia" style="margin-bottom: 12px;">CAMPUS LOCATION</span>
-            <h3 style="font-size: 20px; margin: 0 0 8px 0;">강의장 위치 & 오시는 길</h3>
+            <h3 style="font-size: 20px; margin: 0 0 8px 0;">강의장 위치 & 오시는 길 (국제관 306호)</h3>
             <div
               style="width: 100%; height: 130px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--color-hairline); background: #f1f5f9; position: relative;">
               <img src="images/location.png" alt="강의장 오시는 길 약도"
@@ -269,10 +269,23 @@
 
     <!-- 3. SCHEDULE TAB -->
     <section id="tab-schedule" class="tab-content">
-      <div style="margin-bottom: 32px;">
-        <span class="pill-tag-nvidia">AI AMP 2ND CURRICULUM</span>
-        <h2 style="font-size: 36px; margin-top: 8px;">2기 전체 강의 커리큘럼 & 일정표</h2>
-        <p style="color: var(--color-mute); font-size: 16px;">23인 석학 및 최고 명사 주차별 강의 내용과 강사 이력을 확인하고 강의자료를 다운로드하세요.</p>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <span class="pill-tag-nvidia">AI AMP 2ND CURRICULUM</span>
+          <h2 style="font-size: 36px; margin-top: 8px;">2기 전체 강의 커리큘럼 & 일정표</h2>
+          <p style="color: var(--color-mute); font-size: 16px; margin: 0;">23인 석학 및 최고 명사 주차별 강의 내용과 강사 이력을 확인하고 강의자료를 다운로드하세요.</p>
+        </div>
+        <!-- 💡 상단 관리자 전용 신규 일정 추가 단추 영역 -->
+        <div id="adminTopLectureBtnContainer" style="display: none; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <button type="button" class="btn btn-primary btn-sm" onclick="App.openAddLectureModal()"
+            style="font-weight: 700; padding: 9px 16px; font-size: 13.5px; display: inline-flex; align-items: center; gap: 6px;">
+            ➕ 신규 강의 일정 추가
+          </button>
+          <button type="button" class="btn btn-sm" onclick="App.openAddNetworkingEventModal()"
+            style="font-weight: 700; padding: 9px 16px; font-size: 13.5px; background: linear-gradient(135deg, #f59e0b, #d97706); color: #000; border: 1px solid #f59e0b; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);">
+            🎉 네트워킹 행사 추가
+          </button>
+        </div>
       </div>
 
       <!-- 2-Column Layout (Left: Schedule Cards, Right: 2026_3_curriculum.jpg Poster Card) -->
@@ -958,6 +971,7 @@
         <div>
           <div style="font-size: 14px; font-weight: 600; color: #ffffff; margin-bottom: 14px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.5px;">Resources</div>
           <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px;">
+            <li><a href="#" onclick="App.openReceiptZoomModal('images/2026_3_professor.jpg', '23인 석학 교수진'); return false;" style="color: var(--color-steel); text-decoration: none;">23 Distinguished Scholars</a></li>
             <li><a href="#" onclick="App.openReceiptZoomModal('images/location.png', '강의장 오시는 길 약도'); return false;" style="color: var(--color-steel); text-decoration: none;">Campus Location</a></li>
             <li><a href="인공지능최고경영자과정2기.pdf" target="_blank" style="color: var(--color-steel); text-decoration: none;">Brochure (PDF)</a></li>
           </ul>
